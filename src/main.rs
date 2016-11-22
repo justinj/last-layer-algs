@@ -59,7 +59,11 @@ impl AlgorithmIterator {
         }
         self.moves[idx] = self.successors[idx - 1][self.indices[idx - 1]].clone();
         self.successors[idx] = self.moves[idx].successors();
-        self.cubestates[idx] = self.cubestates[idx - 1].apply(&self.moves[idx].effect);
+        // self.cubestates[idx] = self.cubestates[idx - 1].apply(&self.moves[idx].effect);
+        {
+            let (ref left, ref mut right) = self.cubestates.split_at_mut(idx);
+            left[idx - 1].apply_into(&self.moves[idx].effect, &mut right[0]);
+        }
         true
     }
 }
@@ -67,16 +71,22 @@ impl AlgorithmIterator {
 impl Iterator for AlgorithmIterator {
     type Item = (::cubestate::CubeState, String);
 
-    fn next(&mut self) -> Option<(CubeState, String)> {
-        let last = self.cubestates[self.cubestates.len() - 1];
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut last = self.cubestates[self.cubestates.len() - 1];
         let idx = self.moves.len() - 1;
-        let move_names: Vec<String> = self.moves.iter().map(|m| m.name()).collect();
 
-        if self.inc_idx(idx) {
-            Some((last.clone(), move_names.join(" ")))
-        } else {
-            None
+        while !last.is_ll() {
+            if self.inc_idx(idx) {
+                last = self.cubestates[self.cubestates.len() - 1];
+            } else {
+                return None;
+            }
         }
+
+        // TODO make this good
+        let move_names: Vec<String> = self.moves.iter().map(|m| m.name()).collect();
+        self.inc_idx(idx);
+        Some((last.clone(), move_names.join(" ")))
     }
 }
 

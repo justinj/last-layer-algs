@@ -41,6 +41,13 @@ impl CubeState {
         CubeState { state: stickers }
     }
 
+    pub fn apply_into(&self, other: &CubeState, dest: &mut CubeState) {
+        for i in 0..NUM_STICKERS {
+            dest.state[i] = self.state[(*other).state[i] as usize];
+        }
+    }
+
+
     pub fn is_ll(self) -> bool {
         for i in 18..51 {
             if self.state[i] != i as u8 {
