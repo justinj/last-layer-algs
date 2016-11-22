@@ -26,7 +26,7 @@ impl AlgorithmIterator {
             cubestates: vec![],
             successors: vec![],
             indices: vec![0],
-            length: 8,
+            length: 9,
         };
         iter.cubestates = vec![iter.moves[0].effect];
         iter.successors = vec![iter.moves[0].successors()];
@@ -69,7 +69,7 @@ impl AlgorithmIterator {
 }
 
 impl Iterator for AlgorithmIterator {
-    type Item = (::cubestate::CubeState, String);
+    type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut last = self.cubestates[self.cubestates.len() - 1];
@@ -86,7 +86,7 @@ impl Iterator for AlgorithmIterator {
         // TODO make this good
         let move_names: Vec<String> = self.moves.iter().map(|m| m.name()).collect();
         self.inc_idx(idx);
-        Some((last.clone(), move_names.join(" ")))
+        Some(move_names.join(" "))
     }
 }
 
@@ -96,9 +96,7 @@ fn make_iter() -> AlgorithmIterator {
 
 
 fn main() {
-    for (state, alg) in make_iter() {
-        if state.is_ll() {
-            println!("{} is an LL alg!", alg);
-        }
+    for alg in make_iter() {
+        println!("{} is an LL alg!", alg);
     }
 }
