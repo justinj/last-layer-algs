@@ -1,0 +1,43 @@
+8
+real	0m49.340s
+user	0m49.320s
+sys	0m0.008s
+
+CPU: Intel Sandy Bridge microarchitecture, speed 3.1e+06 MHz (estimated)
+Counted CPU_CLK_UNHALTED events (Clock cycles when not halted) with a unit mask of 0x00 (No unit mask) count 100000
+samples  %        symbol name
+427358   27.7354  good_lls::main::h9dcd17a79e671257
+316171   20.5194  sdallocx
+184108   11.9485  mallocx
+153043    9.9324  rallocx
+147362    9.5637  good_lls::AlgorithmIterator::inc_idx::h1d35161100100b6f
+139891    9.0789  je_arena_ralloc_no_move
+71410     4.6345  _$LT$collections..string..String$u20$as$u20$core..convert..From$LT$$RF$$u27$a$u20$str$GT$$GT$::from::hffc5314c5108afc6
+49672     3.2237  je_arena_ralloc
+20596     1.3367  __rust_deallocate
+18568     1.2051  __rust_allocate
+11233     0.7290  __rust_reallocate
+1168      0.0758  je_tcache_event_hard
+110       0.0071  je_arena_purge
+82        0.0053  arena_maybe_purge_ratio
+10       6.5e-04  arena_bin_malloc_hard
+8        5.2e-04  arena_dalloc_bin_locked_impl.isra.39
+8        5.2e-04  arena_run_dalloc
+6        3.9e-04  je_tcache_bin_flush_small
+5        3.2e-04  arena_avail_remove.isra.21
+4        2.6e-04  arena_run_tree_remove
+3        1.9e-04  _$LT$std..io..Write..write_fmt..Adaptor$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$::write_str::h8bbf97c3a1dbc636
+3        1.9e-04  arena_avail_insert.isra.20
+3        1.9e-04  arena_run_split_remove
+3        1.9e-04  arena_run_tree_insert
+3        1.9e-04  je_arena_tcache_fill_small
+2        1.3e-04  je_arena_choose.part.17.constprop.23
+2        1.3e-04  je_bitmap_init
+2        1.3e-04  je_tcache_alloc_small_hard
+1        6.5e-05  _$LT$F$u20$as$u20$alloc..boxed..FnBox$LT$A$GT$$GT$::call_box::hdeb97faeb74946dd
+1        6.5e-05  _$LT$std..io..buffered..BufWriter$LT$W$GT$$u20$as$u20$std..io..Write$GT$::write::h57182bf6a888e913
+1        6.5e-05  _$LT$std..io..stdio..Stdout$u20$as$u20$std..io..Write$GT$::write_fmt::h92e0bda538a3ac45
+1        6.5e-05  _$LT$str$u20$as$u20$core..fmt..Display$GT$::fmt::h6316a922daa4d084
+1        6.5e-05  arena_run_split_small
+1        6.5e-05  je_arena_choose_hard
+1        6.5e-05  je_base_boot
