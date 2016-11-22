@@ -4,3 +4,6 @@ version = "0.1.0"
 authors = ["Justin Jaffray <justin.jaffray@gmail.com>"]
 
 [dependencies]
+
+[profile.release]
+debug = true

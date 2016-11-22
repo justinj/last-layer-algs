@@ -22,7 +22,7 @@ impl AlgorithmIterator {
             cubestates: vec![],
             successors: vec![],
             indices: vec![0],
-            length: 6,
+            length: 8,
         };
         iter.cubestates = vec![iter.moves[0].effect];
         iter.successors = vec![iter.moves[0].successors()];
