@@ -16,7 +16,6 @@ struct AlgorithmIterator {
     cubestates: Vec<CubeState>,
     moves: Vec<Generator>,
     indices: Vec<usize>,
-    successors: Vec<&'static Vec<&'static Generator>>,
     length: i8
 }
 
@@ -26,12 +25,10 @@ impl AlgorithmIterator {
         let mut iter = AlgorithmIterator {
             moves: vec![*moves],
             cubestates: vec![],
-            successors: vec![],
-            indices: vec![0],
+            indices: vec![],
             length: 6,
         };
         iter.cubestates = vec![iter.moves[0].effect];
-        iter.successors = vec![iter.moves[0].successors()];
 
         while iter.moves.len() < iter.length as usize {
             let last = iter.moves[iter.moves.len() - 1];
@@ -43,30 +40,39 @@ impl AlgorithmIterator {
     fn push_move(&mut self, g: Generator) {
         self.moves.push(g);
         self.indices.push(0);
-        self.successors.push(g.successors());
         let last = self.cubestates[self.cubestates.len() - 1];
         self.cubestates.push(last.apply(&g.effect));
     }
 
-    fn inc_idx(&mut self, idx: usize) -> bool {
+    fn inc_idx(&mut self, idx: usize) -> Option<CubeState> {
         if idx == 0 {
-            return false;
+            return None;
         }
+        let preceding_move = self.moves[idx - 1];
         self.indices[idx - 1] += 1;
-        if self.indices[idx - 1] >= self.successors[idx - 1].len() {
+        if self.indices[idx - 1] >= preceding_move.successors().len() {
             self.indices[idx - 1] = 0;
-            if !self.inc_idx(idx - 1) {
-                return false;
+            if let None = self.inc_idx(idx - 1) {
+                return None;
             }
         }
-        self.moves[idx] = self.successors[idx - 1][self.indices[idx - 1]].clone();
-        self.successors[idx] = self.moves[idx].successors();
-        // self.cubestates[idx] = self.cubestates[idx - 1].apply(&self.moves[idx].effect);
+
+        self.moves[idx] = *self.moves[idx - 1].successors()[self.indices[idx - 1]];
+
         {
             let (ref left, ref mut right) = self.cubestates.split_at_mut(idx);
             left[idx - 1].apply_into(&self.moves[idx].effect, &mut right[0]);
         }
-        true
+        Some(self.cubestates[self.cubestates.len() - 1])
+    }
+
+    fn increment_to_next_cube(&mut self) -> Option<CubeState> {
+        let last_move_index = self.length as usize - 1;
+        self.inc_idx(last_move_index)
+    }
+
+    fn current_algorithm(&self) -> String {
+        self.moves.iter().map(|m| m.name()).collect::<Vec<String>>().join(" ")
     }
 }
 
@@ -74,31 +80,24 @@ impl Iterator for AlgorithmIterator {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut last = self.cubestates[self.cubestates.len() - 1];
-        let idx = self.moves.len() - 1;
+        let mut current_cube = self.cubestates[self.cubestates.len() - 1];
 
-        while !last.is_ll() {
-            if self.inc_idx(idx) {
-                last = self.cubestates[self.cubestates.len() - 1];
+        while !current_cube.is_ll() {
+            if let Some(cube) = self.increment_to_next_cube() {
+                current_cube = cube;
             } else {
                 return None;
             }
         }
 
-        // TODO make this good
-        let move_names: Vec<String> = self.moves.iter().map(|m| m.name()).collect();
-        self.inc_idx(idx);
-        Some(move_names.join(" "))
+        let alg = self.current_algorithm();
+        self.increment_to_next_cube();
+        Some(alg)
     }
 }
 
-fn make_iter() -> AlgorithmIterator {
-    AlgorithmIterator::new()
-}
-
-
 fn main() {
-    for alg in make_iter() {
+    for alg in AlgorithmIterator::new() {
         println!("{} is an LL alg!", alg);
     }
 }
@@ -110,7 +109,7 @@ mod tests {
     #[test]
     fn test_6_movers() {
         assert_eq!(
-            ::make_iter().collect::<Vec<String>>(),
+            ::AlgorithmIterator::new().collect::<Vec<String>>(),
             vec!["R U B U' B' R'", "R B U B' U' R'"]
         );
     }
@@ -118,7 +117,7 @@ mod tests {
     #[bench]
     fn bench_gen_6s(b: &mut Bencher) {
         b.iter(|| {
-            for alg in ::make_iter() {
+            for alg in ::AlgorithmIterator::new() {
                 ::test::black_box(alg);
             }
         });
