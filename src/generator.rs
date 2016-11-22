@@ -2,7 +2,7 @@ use ::cubestate::CubeState as CubeState;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum Face {
-    U, D, F, B, R, L
+    U = 0, D, F, B, R, L
 }
 
 fn face_name(f: Face) -> &'static str {
@@ -84,11 +84,22 @@ static GENERATORS: [Generator; 18] = [
     Generator { face: Face::L, modifier: Modifier::Prime,  effect: CubeState { state: [12,1,2,21,4,5,30,7,8,11,20,29,36,13,14,15,16,17,10,19,28,39,22,23,24,25,26,9,18,27,42,31,32,33,34,35,45,37,38,48,40,41,51,43,44,0,46,47,3,49,50,6,52,53] } },
 ];
 
+lazy_static! {
+    static ref GENERATOR_SUCCESSORS: Vec<Vec<&'static Generator>> = {
+        GENERATORS.iter().map(|g| {
+            g.successors_()
+        }).collect()
+    };
+}
+
 impl Generator {
     pub fn first() -> &'static Generator {
         &GENERATORS[12]
     }
 
+    pub fn index(&self) -> usize {
+        self.face as usize * 3 +  self.modifier as usize
+    }
     pub fn starting_moves() -> Vec<&'static Generator> {
         vec![&GENERATORS[12], &GENERATORS[13], &GENERATORS[14]]
     }
@@ -96,11 +107,15 @@ impl Generator {
     // the moves which can follow another move are those which
     // * are on a different axis from the given move OR
     // * are on the same axis but a different face IF the given move is on U, F, or R.
-    pub fn successors(&self) -> Vec<&'static Generator> {
+    fn successors_(&self) -> Vec<&'static Generator> {
         GENERATORS.iter().filter(|g| {
             face_axis(&g.face) != face_axis(&self.face)
-            || &g.face != &self.face && face_is_primary(&self.face) 
+            || &g.face != &self.face && face_is_primary(&self.face)
         }).collect()
+    }
+
+    pub fn successors(&self) -> &'static Vec<&'static Generator> {
+        &GENERATOR_SUCCESSORS[self.index()]
     }
 
     pub fn name(&self) -> String {

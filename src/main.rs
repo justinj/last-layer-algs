@@ -1,4 +1,8 @@
 #![allow(dead_code)]
+
+#[macro_use]
+extern crate lazy_static;
+
 mod generator;
 mod cubestate;
 
@@ -10,15 +14,15 @@ struct AlgorithmIterator {
     cubestates: Vec<CubeState>,
     moves: Vec<Generator>,
     indices: Vec<usize>,
-    successors: Vec<Vec<&'static Generator>>,
+    successors: Vec<&'static Vec<&'static Generator>>,
     length: i8
 }
 
 impl AlgorithmIterator {
     fn new() -> Self {
-        let moves = vec![Generator::first().clone()];
+        let moves = Generator::first();
         let mut iter = AlgorithmIterator {
-            moves: moves,
+            moves: vec![*moves],
             cubestates: vec![],
             successors: vec![],
             indices: vec![0],
