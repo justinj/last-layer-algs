@@ -1,7 +1,9 @@
 #![allow(dead_code)]
+#![feature(test)]
 
 #[macro_use]
 extern crate lazy_static;
+extern crate test;
 
 mod generator;
 mod cubestate;
@@ -26,7 +28,7 @@ impl AlgorithmIterator {
             cubestates: vec![],
             successors: vec![],
             indices: vec![0],
-            length: 9,
+            length: 6,
         };
         iter.cubestates = vec![iter.moves[0].effect];
         iter.successors = vec![iter.moves[0].successors()];
@@ -98,5 +100,27 @@ fn make_iter() -> AlgorithmIterator {
 fn main() {
     for alg in make_iter() {
         println!("{} is an LL alg!", alg);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use test::Bencher;
+
+    #[test]
+    fn test_6_movers() {
+        assert_eq!(
+            ::make_iter().collect::<Vec<String>>(),
+            vec!["R U B U' B' R'", "R B U B' U' R'"]
+        );
+    }
+
+    #[bench]
+    fn bench_gen_6s(b: &mut Bencher) {
+        b.iter(|| {
+            for alg in ::make_iter() {
+                ::test::black_box(alg);
+            }
+        });
     }
 }
