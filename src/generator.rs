@@ -1,8 +1,22 @@
+use std::str::FromStr;
 use ::cubestate::CubeState as CubeState;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Face {
-    U = 0, D, F, B, R, L
+    U, D, F, B, R, L
+}
+
+impl Face {
+    pub fn score(&self) -> u16 {
+        match *self {
+            Face::U => 0,
+            Face::D => 0,
+            Face::F => 2,
+            Face::B => 0,
+            Face::R => 3,
+            Face::L => 1,
+        }
+    }
 }
 
 fn face_name(f: Face) -> &'static str {
@@ -13,6 +27,17 @@ fn face_name(f: Face) -> &'static str {
         Face::B => "B",
         Face::R => "R",
         Face::L => "L",
+    }
+}
+
+fn face_rotate_y(f: Face) -> Face {
+    match f {
+        Face::U => Face::U,
+        Face::D => Face::D,
+        Face::F => Face::L,
+        Face::B => Face::R,
+        Face::R => Face::F,
+        Face::L => Face::B,
     }
 }
 
@@ -32,6 +57,7 @@ fn face_axis(f: &Face) -> Axis {
     }
 }
 
+// Whether this face is the primary in an axis-pair (UD, FB, RL).
 fn face_is_primary(f: &Face) -> bool {
     match f {
         &Face::U => true,
@@ -42,7 +68,7 @@ fn face_is_primary(f: &Face) -> bool {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 enum Modifier {
     Normal, Twice, Prime
 }
@@ -56,7 +82,7 @@ fn modifier_name(m: Modifier) -> &'static str {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Generator {
     pub effect: CubeState,
     face: Face,
@@ -92,14 +118,62 @@ lazy_static! {
     };
 }
 
+impl FromStr for Generator {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // FIXME
+        let idx = match s {
+            "U"  => Ok(0),
+            "U2" => Ok(1),
+            "U'" => Ok(2),
+            "D"  => Ok(3),
+            "D2" => Ok(4),
+            "D'" => Ok(5),
+            "F"  => Ok(6),
+            "F2" => Ok(7),
+            "F'" => Ok(8),
+            "B"  => Ok(9),
+            "B2" => Ok(10),
+            "B'" => Ok(11),
+            "R"  => Ok(12),
+            "R2" => Ok(13),
+            "R'" => Ok(14),
+            "L"  => Ok(15),
+            "L2" => Ok(16),
+            "L'" => Ok(17),
+            &_ => Err(format!("No move {}", s))
+        }?;
+        Ok(GENERATORS[idx])
+    }
+}
+
 impl Generator {
     pub fn first() -> &'static Generator {
         &GENERATORS[12]
     }
 
-    pub fn index(&self) -> usize {
-        self.face as usize * 3 +  self.modifier as usize
+    // used to check if a valid move can end with this
+    pub fn is_u_move(&self) -> bool {
+        self.face == Face::U
     }
+
+    pub fn index(&self) -> usize {
+        self.face as usize * 3 + self.modifier as usize
+    }
+
+    fn from_face_and_modifier(f: Face, m: Modifier) -> Self {
+        GENERATORS[f as usize * 3 + m as usize]
+    }
+
+    pub fn rotate_y(&self) -> Self {
+        Self::from_face_and_modifier(face_rotate_y(self.face), self.modifier)
+    }
+
+    pub fn score(&self) -> u16 {
+        self.face.score()
+    }
+
     pub fn starting_moves() -> Vec<&'static Generator> {
         vec![&GENERATORS[12], &GENERATORS[13], &GENERATORS[14]]
     }
