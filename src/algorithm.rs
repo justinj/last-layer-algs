@@ -1,11 +1,28 @@
 use ::generator::Generator as Generator;
+use ::generator::Face as Face;
 use ::cubestate::CubeState as CubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
 
 #[derive(Clone)]
 pub struct Algorithm {
-    moves: Vec<Generator>
+    pub moves: Vec<Generator>
+}
+
+// check for bad pairs like "R R" or "D U"
+fn check_for_invalid_pairs(moves: &Vec<Generator>) -> Result<(), String> {
+    if moves.len() == 0 { return Ok(()); }
+    for i in 0..(moves.len() - 1) {
+        if !moves[i].is_valid_successor(&moves[i + 1]) {
+            return Err(
+                format!(
+                    "\"{} {}\" is an invalid pair",
+                    moves[i], moves[i + 1]
+                )
+           );
+        }
+    }
+    Ok(())
 }
 
 impl FromStr for Algorithm {
@@ -14,6 +31,7 @@ impl FromStr for Algorithm {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let moves: Vec<Generator>
             = s.split_whitespace().map(|s| Generator::from_str(s)).collect::<Result<Vec<Generator>, Self::Err>>()?;
+        check_for_invalid_pairs(&moves)?;
         Ok(Algorithm {
             moves: moves
         })
@@ -27,13 +45,17 @@ impl Display for Algorithm {
 }
 
 impl Algorithm {
-    fn length(&self) -> i8 {
+    pub fn length(&self) -> i8 {
         self.moves.len() as i8
+    }
+
+    pub fn first_non_ud_move(&self) -> Option<&Generator> {
+        self.moves.iter().find(|m| !m.is_u_move() && !m.is_d_move())
     }
 
     // Gives a vec of the incremental cubestates after each move is applied
     // Used to reconstruct the state of the iterator
-    fn cubestates(&self) -> Vec<CubeState> {
+    pub fn cubestates(&self) -> Vec<CubeState> {
         self.moves.iter().scan(CubeState::solved(), |&mut c, next| {
             Some(c.apply(&next.effect))
         }).collect()
@@ -65,6 +87,22 @@ impl Algorithm {
         }
         best_alg
     }
+
+    pub fn canonical_rotation(&self) -> Algorithm {
+        if self.moves.len() == 0 {
+            return self.clone();
+        }
+        match self.moves.iter().position(|m| !(m.is_u_move() || m.is_d_move())) {
+            Some(idx) => {
+                let mut result = self.clone();
+                while result.moves[idx].face != Face::R {
+                    result = result.rotate();
+                }
+                result
+            },
+            None => self.clone(),
+        }
+    }
 }
 
 #[test]
@@ -95,4 +133,26 @@ fn gives_best_rotation() {
     let alg2 = Algorithm::from_str("F U F' U'").unwrap();
     let best2 = alg2.best_rotation();
     assert_eq!(format!("{}", best2), "R U R' U'");
+}
+
+#[test]
+fn gives_canonical_if_starts_with_u_or_d() {
+    let alg = Algorithm::from_str("U F").unwrap();
+    assert_eq!(format!("{}", alg.canonical_rotation()), "U R");
+}
+
+#[test]
+fn fails_on_invalid_successor() {
+    match Algorithm::from_str("R R") {
+        Ok(_) => panic!("Expected failure!"),
+        Err(s) => assert_eq!(s, "\"R R\" is an invalid pair"),
+    }
+}
+
+#[test]
+fn handles_empty_alg() {
+    let alg = Algorithm::from_str("").unwrap();
+    assert_eq!(alg.length(), 0);
+    assert_eq!(format!("{}", alg.best_rotation()), "");
+    assert_eq!(format!("{}", alg.canonical_rotation()), "");
 }

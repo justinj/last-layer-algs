@@ -1,8 +1,9 @@
 use std::str::FromStr;
 use ::cubestate::CubeState as CubeState;
+use ::std::fmt::Display;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum Face {
+pub enum Face {
     U, D, F, B, R, L
 }
 
@@ -68,7 +69,7 @@ fn face_is_primary(f: &Face) -> bool {
 }
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Modifier {
     Normal, Twice, Prime
 }
@@ -82,10 +83,10 @@ fn modifier_name(m: Modifier) -> &'static str {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Generator {
     pub effect: CubeState,
-    face: Face,
+    pub face: Face,
     modifier: Modifier,
 }
 
@@ -142,9 +143,15 @@ impl FromStr for Generator {
             "L"  => Ok(15),
             "L2" => Ok(16),
             "L'" => Ok(17),
-            &_ => Err(format!("No move {}", s))
+            &_ => Err(format!("No move '{}'", s))
         }?;
         Ok(GENERATORS[idx])
+    }
+}
+
+impl Display for Generator {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "{}", self.name())
     }
 }
 
@@ -153,9 +160,12 @@ impl Generator {
         &GENERATORS[12]
     }
 
-    // used to check if a valid move can end with this
     pub fn is_u_move(&self) -> bool {
         self.face == Face::U
+    }
+
+    pub fn is_d_move(&self) -> bool {
+        self.face == Face::D
     }
 
     pub fn index(&self) -> usize {
@@ -183,15 +193,20 @@ impl Generator {
     // * are on the same axis but a different face IF the given move is on U, F, or R.
     fn successors_(&self) -> Vec<&'static Generator> {
         GENERATORS.iter().filter(|g| {
-            face_axis(&g.face) != face_axis(&self.face)
-            || &g.face != &self.face && face_is_primary(&self.face)
+            self.is_valid_successor(g)
         }).collect()
+    }
+
+    pub fn is_valid_successor(&self, g: &Generator) -> bool {
+        face_axis(&g.face) != face_axis(&self.face)
+        || &g.face != &self.face && face_is_primary(&self.face)
     }
 
     pub fn successors(&self) -> &'static Vec<&'static Generator> {
         &GENERATOR_SUCCESSORS[self.index()]
     }
 
+    // TODO: get rid of me for just display
     pub fn name(&self) -> String {
        let mut result: String = String::from(face_name(self.face));
        result.push_str(modifier_name(self.modifier));

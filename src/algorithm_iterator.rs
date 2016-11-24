@@ -12,19 +12,72 @@ pub struct AlgorithmIterator {
 
 impl AlgorithmIterator {
     pub fn new() -> Self {
-        let first_move = Generator::first();
         let mut iter = AlgorithmIterator {
-            moves: vec![*first_move],
-            cubestates: vec![first_move.effect],
-            indices: vec![0],
-            length: 6,
+            moves: vec![],
+            cubestates: vec![],
+            indices: vec![],
+            length: 0,
         };
 
-        while iter.moves.len() < iter.length as usize {
-            let last = iter.moves[iter.moves.len() - 1];
-            iter.push_move(last.successors()[0].clone());
-        }
+        iter.initialize_with_length(6);
         iter
+    }
+
+    fn initialize_with_length(&mut self, len: i8) {
+        let first_move = Generator::first();
+        self.moves = vec![*first_move];
+        self.cubestates = vec![first_move.effect];
+        self.indices = vec![0];
+        self.length = len;
+        while self.moves.len() < self.length as usize {
+            let last = self.moves[self.moves.len() - 1];
+            self.push_move(last.successors()[0].clone());
+        }
+    }
+
+    pub fn from_starting_algorithm(s: &str) -> Result<Self, String> {
+        let alg = Algorithm::from_str(s)?.canonical_rotation();
+        let moves = alg.moves.clone();
+
+        if moves.len() == 0 {
+            return Ok(Self::new());
+        }
+
+        let cubestates = alg.cubestates();
+        let mut indices = vec![];
+
+        // TODO eh gross, shouldn't check the name
+        indices.push(match alg.first_non_ud_move() {
+            Some(m) => match m.name().as_str() {
+                "R" => 0,
+                "R2" => 1,
+                "R'" => 2,
+                _ => panic!("Shouldn't happen because we canonicalized the algorithm above"),
+            },
+            None => {
+                // there was only U's and D's, so the alg can only be
+                // "U*", "D*", or "U* D*"
+                return Ok(Self::new());
+            }
+        });
+
+        for &m in moves.iter().skip(1) {
+            let cur_idx = indices.len();
+            let successors = moves[cur_idx - 1].successors();
+            for (i, &&s) in successors.iter().enumerate() {
+                if s == m {
+                    indices.push(i);
+                    break;
+                }
+            }
+        }
+
+        Ok(AlgorithmIterator {
+            moves: moves,
+            cubestates: cubestates,
+            indices: indices,
+            length: alg.length() as i8,
+        })
     }
 
     fn push_move(&mut self, g: Generator) {
@@ -64,9 +117,16 @@ impl AlgorithmIterator {
         Some(self.cubestates[self.cubestates.len() - 1])
     }
 
-    fn increment_to_next_cube(&mut self) -> Option<CubeState> {
+    fn increment_to_next_cube(&mut self) -> CubeState {
         let last_move_index = self.length as usize - 1;
-        self.inc_idx(last_move_index)
+        match self.inc_idx(last_move_index) {
+            Some(cube) => cube,
+            None => {
+                let new_length = self.length + 1;
+                self.initialize_with_length(new_length);
+                self.increment_to_next_cube()
+            },
+        }
     }
 
     fn current_algorithm(&self) -> String {
@@ -81,11 +141,7 @@ impl Iterator for AlgorithmIterator {
         let mut current_cube = self.cubestates[self.cubestates.len() - 1];
 
         while self.moves[self.moves.len() - 1].is_u_move() || !current_cube.is_ll() {
-            if let Some(cube) = self.increment_to_next_cube() {
-                current_cube = cube;
-            } else {
-                return None;
-            }
+            current_cube = self.increment_to_next_cube();
         }
 
         let alg = self.current_algorithm();
@@ -104,15 +160,37 @@ mod tests {
     #[test]
     fn test_6_movers() {
         assert_eq!(
-            ::algorithm_iterator::AlgorithmIterator::new().map(|a| format!("{}", a)).collect::<Vec<String>>(),
+            ::algorithm_iterator::AlgorithmIterator::new().take(4).map(|a| format!("{}", a)).collect::<Vec<String>>(),
             vec!["F U R U' R' F'", "F R U R' U' F'", "R' U' F' U F R", "R' F' U' F U R"]
+        );
+    }
+
+    #[test]
+    fn test_from_algorithm_starts_from_certain_position() {
+        let first = ::algorithm_iterator::AlgorithmIterator::
+            from_starting_algorithm("F R U R' U' F'") .unwrap()
+            .next().unwrap();
+        assert_eq!(
+            format!("{}", first),
+            "R' U' F' U F R"
+        );
+    }
+
+    #[test]
+    fn test_increments_length() {
+        let first = ::algorithm_iterator::AlgorithmIterator::
+            from_starting_algorithm("R' F' U' F U R").unwrap()
+            .next().unwrap();
+        assert_eq!(
+            format!("{}", first),
+            "R U R' U R U2 R'"
         );
     }
 
     #[bench]
     fn bench_gen_6s(b: &mut Bencher) {
         b.iter(|| {
-            for alg in ::algorithm_iterator::AlgorithmIterator::new() {
+            for alg in ::algorithm_iterator::AlgorithmIterator::new().take(4) {
                 ::test::black_box(alg);
             }
         });

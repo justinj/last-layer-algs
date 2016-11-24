@@ -33,6 +33,19 @@ pub struct CubeState {
     pub state: [u8; NUM_STICKERS],
 }
 
+impl PartialEq for CubeState {
+    fn eq(&self, other: &CubeState) -> bool {
+        for i in 0..NUM_STICKERS {
+            if self.state[i] != other.state[i] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+impl Eq for CubeState {}
+
 impl fmt::Debug for CubeState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[{}]", self.state.iter().map(|x| format!("{:?}", x)).collect::<Vec<String>>().join(", "))

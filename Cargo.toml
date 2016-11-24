@@ -5,6 +5,7 @@ authors = ["Justin Jaffray <justin.jaffray@gmail.com>"]
 
 [dependencies]
 lazy_static = "0.1.*"
+clap = "~2.19.0"
 
 [profile.release]
 debug = true
