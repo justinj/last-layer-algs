@@ -3,6 +3,7 @@ use cubestate::{CubeState};
 use algorithm::{Algorithm};
 use ::std::str::FromStr;
 
+#[derive(Debug)]
 pub struct AlgorithmIterator {
     cubestates: Vec<CubeState>,
     moves: Vec<Generator>,
@@ -72,6 +73,9 @@ impl AlgorithmIterator {
             }
         }
 
+        // println!("{}", alg);
+        // println!("{:?}", indices);
+
         Ok(AlgorithmIterator {
             moves: moves,
             cubestates: cubestates,
@@ -138,6 +142,7 @@ impl Iterator for AlgorithmIterator {
     type Item = Algorithm;
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.increment_to_next_cube();
         let mut current_cube = self.cubestates[self.cubestates.len() - 1];
 
         while self.moves[self.moves.len() - 1].is_u_move() || !current_cube.is_ll() {
@@ -145,10 +150,10 @@ impl Iterator for AlgorithmIterator {
         }
 
         let alg = self.current_algorithm();
-        self.increment_to_next_cube();
 
         // TODO: dont unwrap here
         let algorithm = Algorithm::from_str(alg.as_str()).unwrap();
+
         Some(algorithm.best_rotation())
     }
 }

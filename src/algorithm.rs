@@ -56,9 +56,16 @@ impl Algorithm {
     // Gives a vec of the incremental cubestates after each move is applied
     // Used to reconstruct the state of the iterator
     pub fn cubestates(&self) -> Vec<CubeState> {
-        self.moves.iter().scan(CubeState::solved(), |&mut c, next| {
-            Some(c.apply(&next.effect))
-        }).collect()
+        let mut result = vec![];
+        let mut curr_cube = CubeState::solved();
+        for m in &self.moves {
+            curr_cube = curr_cube.apply(&m.effect);
+            result.push(curr_cube);
+        }
+        result
+        // self.moves.iter().scan(CubeState::solved(), |&mut c, next| {
+        //     Some(c.apply(&next.effect))
+        // }).collect()
     }
 
     fn rotate(&self) -> Algorithm {

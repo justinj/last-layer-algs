@@ -1,4 +1,5 @@
 use std::fmt;
+use ::std::fmt::Display;
 
 const NUM_STICKERS: usize = 54;
 
@@ -59,6 +60,12 @@ impl Clone for CubeState {
             new.state[i] = self.state[i];
         }
         new
+    }
+}
+
+impl Display for CubeState {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "[{}]", self.state.iter().map(|g| format!("{}", g)).collect::<Vec<String>>().join(", "))
     }
 }
 

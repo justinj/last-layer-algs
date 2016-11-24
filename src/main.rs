@@ -14,12 +14,54 @@ mod algorithm;
 mod algorithm_iterator;
 
 use algorithm_iterator::{AlgorithmIterator};
-use std::io::Write;
+use std::io::{Read, Write};
+use std::fs::File;
+use std::path::Path;
+
+// TODO: take this as a cli param?
+const LAST_FNAME: &'static str = "last";
 
 fn alg_following(s: &str) -> Result<String, String> {
+    // for a in AlgorithmIterator::new() {
+    //     println!("{}", a);
+    // }
     let mut it = AlgorithmIterator::from_starting_algorithm(s)?;
     let alg = it.next().unwrap();
     Ok(format!("{}", alg))
+}
+
+fn tweet() {
+    let path = Path::new(LAST_FNAME);
+    let display = path.display();
+    let mut file = match File::open(&path) {
+        Err(why) => panic!("Couldn't open last alg file {}: {}", display, why),
+        Ok(file) => file,
+    };
+
+    let mut s = String::new();
+
+    match file.read_to_string(&mut s) {
+        Ok(_) => s = String::from(s.trim()),
+        Err(why) => panic!("Couldn't read file: {}", why),
+    }
+
+    let result = match alg_following(s.as_str()) {
+        Err(msg) => {
+            writeln!(&mut std::io::stderr(), "Error: {}", msg).unwrap();
+            std::process::exit(1)
+        },
+        Ok(alg) => alg
+    };
+    println!("I am tweeting {}!!", result);
+    match File::create(&path) {
+        Err(why) => panic!("Couldn't open file for writing: {}", why),
+        Ok(mut file) => {
+            match file.write_all(format!("{}", result).as_bytes()) {
+                Err(why) => panic!("Couldn't write to file: {}", why),
+                Ok(_) => ()
+            }
+        }
+    };
 }
 
 fn main() {
@@ -33,6 +75,8 @@ fn main() {
                          .help("the algorithm to follow")
                          .index(1)
                          .required(true)))
+        .subcommand(SubCommand::with_name("tweet")
+                    .about("Tweet out the next alg"))
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("following") {
@@ -45,6 +89,10 @@ fn main() {
                 }
             }
         }
+    }
+
+    if let Some(_) = matches.subcommand_matches("tweet") {
+        tweet();
     }
 }
     // for alg in AlgorithmIterator::new() {
