@@ -44,6 +44,8 @@ impl Display for Algorithm {
     }
 }
 
+//TODO: standardize on -> Self
+
 impl Algorithm {
     pub fn length(&self) -> i8 {
         self.moves.len() as i8
@@ -66,6 +68,17 @@ impl Algorithm {
         // self.moves.iter().scan(CubeState::solved(), |&mut c, next| {
         //     Some(c.apply(&next.effect))
         // }).collect()
+    }
+    
+    pub fn inverse(&self) -> Self {
+        let mut moves: Vec<Generator>  = self.moves.clone().iter().map(|g| g.inverse()).collect();
+        moves.reverse();
+        Algorithm { moves: moves }
+    }
+
+    pub fn cube(&self) -> CubeState {
+        let cubestates = self.cubestates();
+        cubestates[cubestates.len() - 1]
     }
 
     fn rotate(&self) -> Algorithm {

@@ -75,6 +75,17 @@ enum Modifier {
 }
 
 
+impl Modifier {
+    fn inverse(&self) -> Self {
+        match self {
+            &Modifier::Normal => Modifier::Prime,
+            &Modifier::Twice  => Modifier::Twice,
+            &Modifier::Prime  => Modifier::Normal,
+        }
+    }
+}
+
+// TODO: move to impl
 fn modifier_name(m: Modifier) -> &'static str {
     match m {
         Modifier::Normal => "",
@@ -174,6 +185,10 @@ impl Generator {
 
     fn from_face_and_modifier(f: Face, m: Modifier) -> Self {
         GENERATORS[f as usize * 3 + m as usize]
+    }
+
+    pub fn inverse(&self) -> Self {
+        Self::from_face_and_modifier(self.face, self.modifier.inverse())
     }
 
     pub fn rotate_y(&self) -> Self {

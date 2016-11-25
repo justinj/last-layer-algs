@@ -5,6 +5,10 @@
 extern crate lazy_static;
 extern crate test;
 extern crate clap;
+extern crate cairo;
+extern crate twitter_api as twitter;
+extern crate oauth_client as oauth;
+extern crate rustc_serialize;
 
 use clap::{Arg, App, SubCommand};
 
@@ -12,7 +16,12 @@ mod generator;
 mod cubestate;
 mod algorithm;
 mod algorithm_iterator;
+mod tweet;
+mod image_generator;
 
+use cubestate::CubeState;
+use algorithm::Algorithm;
+use ::std::str::FromStr;
 use algorithm_iterator::{AlgorithmIterator};
 use std::io::{Read, Write};
 use std::fs::File;
@@ -30,7 +39,7 @@ fn alg_following(s: &str) -> Result<String, String> {
     Ok(format!("{}", alg))
 }
 
-fn tweet() {
+fn prepare_tweet() {
     let path = Path::new(LAST_FNAME);
     let display = path.display();
     let mut file = match File::open(&path) {
@@ -52,14 +61,22 @@ fn tweet() {
         },
         Ok(alg) => alg
     };
-    println!("I am tweeting {}!!", result);
-    match File::create(&path) {
-        Err(why) => panic!("Couldn't open file for writing: {}", why),
-        Ok(mut file) => {
-            match file.write_all(format!("{}", result).as_bytes()) {
-                Err(why) => panic!("Couldn't write to file: {}", why),
-                Ok(_) => ()
-            }
+
+    let alg = Algorithm::from_str(result.as_str()).unwrap().inverse();
+    ::image_generator::generate_image(alg.cube(), "output_file.png");
+
+    match ::tweet::tweet(format!("{}", result).as_str()) {
+        Err(why) => println!("Couldn't tweet: {}", why),
+        Ok(()) => {
+            match File::create(&path) {
+                Err(why) => panic!("Couldn't open file for writing: {}", why),
+                Ok(mut file) => {
+                    match file.write_all(format!("{}", result).as_bytes()) {
+                        Err(why) => panic!("Couldn't write to file: {}", why),
+                        Ok(_) => ()
+                    }
+                }
+            };
         }
     };
 }
@@ -92,7 +109,7 @@ fn main() {
     }
 
     if let Some(_) = matches.subcommand_matches("tweet") {
-        tweet();
+        prepare_tweet();
     }
 }
     // for alg in AlgorithmIterator::new() {
