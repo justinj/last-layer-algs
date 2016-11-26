@@ -1,9 +1,7 @@
 use cairo::surface::Surface;
 use cairo::Cairo;
 use cairo::surface::format::Format;
-use std::path::Path;
 use cubestate::CubeState;
-
 
 const WIDTH: i32 = 500;
 const HEIGHT: i32 = 250;
@@ -170,7 +168,7 @@ const SQUARE_SPACING: f64 = 4.;
 
 pub fn generate_image(c: CubeState, output_filename: &str) {
     // this is inside this function because on the rust 1.15 nightly I get a segfault otherwise
-    let STICKERS: [(usize, Sticker); 21] = [
+    let stickers: [(usize, Sticker); 21] = [
         (51, Sticker::Vanishing {
             x: (WIDTH / 2) as f64 - 43.5,
             y: (HEIGHT / 2) as f64 - 65.,
@@ -274,7 +272,7 @@ pub fn generate_image(c: CubeState, output_filename: &str) {
 
     cr.set_line_width(4.);
 
-    for &r in STICKERS.to_vec().iter() {
+    for &r in stickers.to_vec().iter() {
         let (i, s) = r;
         draw_sticker(&mut cr, &s, sticker_color(c.state[i]).rgb());
     }

@@ -2,6 +2,7 @@ use generator::{Generator};
 use cubestate::{CubeState};
 use algorithm::{Algorithm};
 use ::std::str::FromStr;
+use ::lla_error::LLAError;
 
 #[derive(Debug)]
 pub struct AlgorithmIterator {
@@ -36,7 +37,7 @@ impl AlgorithmIterator {
         }
     }
 
-    pub fn from_starting_algorithm(s: &str) -> Result<Self, String> {
+    pub fn from_starting_algorithm(s: &str) -> Result<Self, LLAError> {
         let alg = Algorithm::from_str(s)?.canonical_rotation();
         let moves = alg.moves.clone();
 

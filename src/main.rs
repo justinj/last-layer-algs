@@ -18,19 +18,20 @@ mod algorithm;
 mod algorithm_iterator;
 mod tweet;
 mod image_generator;
+mod lla_error;
 
-use cubestate::CubeState;
 use algorithm::Algorithm;
 use ::std::str::FromStr;
 use algorithm_iterator::{AlgorithmIterator};
 use std::io::{Read, Write};
 use std::fs::File;
 use std::path::Path;
+use ::lla_error::LLAError;
 
 // TODO: take this as a cli param?
 const LAST_FNAME: &'static str = "last";
 
-fn alg_following(s: &str) -> Result<String, String> {
+fn alg_following(s: &str) -> Result<String, LLAError> {
     // for a in AlgorithmIterator::new() {
     //     println!("{}", a);
     // }
@@ -55,8 +56,8 @@ fn prepare_tweet() {
     }
 
     let result = match alg_following(s.as_str()) {
-        Err(msg) => {
-            writeln!(&mut std::io::stderr(), "Error: {}", msg).unwrap();
+        Err(why) => {
+            writeln!(&mut std::io::stderr(), "Error: {}", why).unwrap();
             std::process::exit(1)
         },
         Ok(alg) => alg
@@ -111,7 +112,8 @@ fn main() {
     if let Some(_) = matches.subcommand_matches("tweet") {
         prepare_tweet();
     }
+    
+    for alg in AlgorithmIterator::new() {
+        println!("{} is an LL alg!", alg);
+    }
 }
-    // for alg in AlgorithmIterator::new() {
-    //     println!("{} is an LL alg!", alg);
-    // }

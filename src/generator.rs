@@ -1,6 +1,8 @@
 use std::str::FromStr;
 use ::cubestate::CubeState as CubeState;
 use ::std::fmt::Display;
+use ::lla_error::LLAError;
+use self::LLAError::InvalidAlgorithm;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Face {
@@ -131,7 +133,7 @@ lazy_static! {
 }
 
 impl FromStr for Generator {
-    type Err = String;
+    type Err = LLAError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // FIXME
@@ -154,7 +156,7 @@ impl FromStr for Generator {
             "L"  => Ok(15),
             "L2" => Ok(16),
             "L'" => Ok(17),
-            &_ => Err(format!("No move '{}'", s))
+            &_ => Err(InvalidAlgorithm(format!("No move '{}'", s)))
         }?;
         Ok(GENERATORS[idx])
     }

@@ -3,6 +3,8 @@ use ::generator::Face as Face;
 use ::cubestate::CubeState as CubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
+use ::lla_error::LLAError;
+use self::LLAError::InvalidAlgorithm;
 
 #[derive(Clone)]
 pub struct Algorithm {
@@ -10,23 +12,23 @@ pub struct Algorithm {
 }
 
 // check for bad pairs like "R R" or "D U"
-fn check_for_invalid_pairs(moves: &Vec<Generator>) -> Result<(), String> {
+fn check_for_invalid_pairs(moves: &Vec<Generator>) -> Result<(), LLAError> {
     if moves.len() == 0 { return Ok(()); }
     for i in 0..(moves.len() - 1) {
         if !moves[i].is_valid_successor(&moves[i + 1]) {
             return Err(
-                format!(
+                InvalidAlgorithm(
+                    format!(
                     "\"{} {}\" is an invalid pair",
                     moves[i], moves[i + 1]
-                )
-           );
+                )));
         }
     }
     Ok(())
 }
 
 impl FromStr for Algorithm {
-    type Err = String;
+    type Err = LLAError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let moves: Vec<Generator>
@@ -165,8 +167,14 @@ fn gives_canonical_if_starts_with_u_or_d() {
 fn fails_on_invalid_successor() {
     match Algorithm::from_str("R R") {
         Ok(_) => panic!("Expected failure!"),
-        Err(s) => assert_eq!(s, "\"R R\" is an invalid pair"),
+        Err(InvalidAlgorithm(s)) => assert_eq!(s, "\"R R\" is an invalid pair"),
     }
+}
+
+#[test]
+fn can_take_inverses() {
+    let alg = Algorithm::from_str("R U R' U'").unwrap();
+    assert_eq!(format!("{}", alg.inverse()), "U R U' R'");
 }
 
 #[test]
