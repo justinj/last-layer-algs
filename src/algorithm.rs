@@ -1,6 +1,6 @@
-use ::generator::Generator as Generator;
-use ::generator::Face as Face;
-use ::cubestate::CubeState as CubeState;
+use ::generator::Generator;
+use ::generator::Face;
+use ::cubestate::CubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
 use ::lla_error::LLAError;
@@ -11,7 +11,7 @@ pub struct Algorithm {
     pub moves: Vec<Generator>
 }
 
-// check for bad pairs like "R R" or "D U"
+// We don't allow pairs like "R R", and we also don't allow pairs like "D U" (only "U D")
 fn check_for_invalid_pairs(moves: &Vec<Generator>) -> Result<(), LLAError> {
     if moves.len() == 0 { return Ok(()); }
     for i in 0..(moves.len() - 1) {
@@ -31,8 +31,10 @@ impl FromStr for Algorithm {
     type Err = LLAError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let moves: Vec<Generator>
-            = s.split_whitespace().map(|s| Generator::from_str(s)).collect::<Result<Vec<Generator>, Self::Err>>()?;
+        let moves: Vec<Generator> = s
+            .split_whitespace()
+            .map(|s| Generator::from_str(s))
+            .collect::<Result<Vec<Generator>, Self::Err>>()?;
         check_for_invalid_pairs(&moves)?;
         Ok(Algorithm {
             moves: moves
@@ -46,8 +48,6 @@ impl Display for Algorithm {
     }
 }
 
-//TODO: standardize on -> Self
-
 impl Algorithm {
     pub fn length(&self) -> i8 {
         self.moves.len() as i8
@@ -59,7 +59,7 @@ impl Algorithm {
 
     // Gives a vec of the incremental cubestates after each move is applied
     // Used to reconstruct the state of the iterator
-    pub fn cubestates(&self) -> Vec<CubeState> {
+    pub fn cubestates_stack(&self) -> Vec<CubeState> {
         let mut result = vec![];
         let mut curr_cube = CubeState::solved();
         for m in &self.moves {
@@ -67,23 +67,20 @@ impl Algorithm {
             result.push(curr_cube);
         }
         result
-        // self.moves.iter().scan(CubeState::solved(), |&mut c, next| {
-        //     Some(c.apply(&next.effect))
-        // }).collect()
     }
-    
+
     pub fn inverse(&self) -> Self {
-        let mut moves: Vec<Generator>  = self.moves.clone().iter().map(|g| g.inverse()).collect();
+        let mut moves: Vec<Generator> = self.moves.iter().map(|g| g.inverse()).collect();
         moves.reverse();
         Algorithm { moves: moves }
     }
 
     pub fn cube(&self) -> CubeState {
-        let cubestates = self.cubestates();
+        let cubestates = self.cubestates_stack();
         cubestates[cubestates.len() - 1]
     }
 
-    fn rotate(&self) -> Algorithm {
+    fn rotate(&self) -> Self {
         Algorithm {
             moves: self.moves.iter().map(|m| m.rotate_y()).collect()
         }
@@ -110,6 +107,9 @@ impl Algorithm {
         best_alg
     }
 
+    // The canonical (y) rotation is one which either
+    //  1. starts with an R* move or
+    //  2. has only U and D moves
     pub fn canonical_rotation(&self) -> Algorithm {
         if self.moves.len() == 0 {
             return self.clone();
@@ -136,7 +136,7 @@ fn gives_alg_length() {
 #[test]
 fn gives_cubestates() {
     let alg = Algorithm::from_str("R U R' U'").unwrap();
-    let cubestates = alg.cubestates();
+    let cubestates = alg.cubestates_stack();
     assert_eq!(cubestates.len(), 4);
 }
 

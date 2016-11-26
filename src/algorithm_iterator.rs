@@ -1,7 +1,6 @@
-use generator::{Generator};
-use cubestate::{CubeState};
-use algorithm::{Algorithm};
-use ::std::str::FromStr;
+use generator::Generator;
+use cubestate::CubeState;
+use algorithm::Algorithm; use ::std::str::FromStr;
 use ::lla_error::LLAError;
 
 #[derive(Debug)]
@@ -45,7 +44,7 @@ impl AlgorithmIterator {
             return Ok(Self::new());
         }
 
-        let cubestates = alg.cubestates();
+        let cubestates = alg.cubestates_stack();
         let mut indices = vec![];
 
         // TODO eh gross, shouldn't check the name
