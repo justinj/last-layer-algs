@@ -2,7 +2,6 @@ use generator::{Generator, Face, Modifier};
 use cubestate::CubeState;
 use algorithm::Algorithm; use ::std::str::FromStr;
 use ::std::error::Error;
-use ::lla_error::LLAError;
 
 #[derive(Debug)]
 pub struct AlgorithmIterator {

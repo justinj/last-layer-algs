@@ -9,6 +9,11 @@ pub enum Face {
     U, D, F, B, R, L
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum Axis {
+    UD, FB, RL
+}
+
 impl Face {
     // Used to pick a "best" rotation of an algorithm to present.
     pub fn score(&self) -> u16 {
@@ -32,6 +37,26 @@ impl Face {
             &Face::L => Face::B,
         }
     }
+
+    fn axis(&self) -> Axis {
+        match self {
+            &Face::U => Axis::UD,
+            &Face::D => Axis::UD,
+            &Face::F => Axis::FB,
+            &Face::B => Axis::FB,
+            &Face::R => Axis::RL,
+            &Face::L => Axis::RL,
+        }
+    }
+
+    fn is_primary(&self) -> bool {
+        match self {
+            &Face::U => true,
+            &Face::F => true,
+            &Face::R => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for Face {
@@ -47,46 +72,9 @@ impl Display for Face {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-enum Axis {
-    UD, FB, RL
-}
-
-fn face_axis(f: &Face) -> Axis {
-    match f {
-        &Face::U => Axis::UD,
-        &Face::D => Axis::UD,
-        &Face::F => Axis::FB,
-        &Face::B => Axis::FB,
-        &Face::R => Axis::RL,
-        &Face::L => Axis::RL,
-    }
-}
-
-// Whether this face is the primary in an axis-pair (UD, FB, RL).
-fn face_is_primary(f: &Face) -> bool {
-    match f {
-        &Face::U => true,
-        &Face::F => true,
-        &Face::R => true,
-        _ => false,
-    }
-}
-
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Modifier {
     Normal, Twice, Prime
-}
-
-impl Modifier {
-    fn inverse(&self) -> Self {
-        match self {
-            &Modifier::Normal => Modifier::Prime,
-            &Modifier::Twice  => Modifier::Twice,
-            &Modifier::Prime  => Modifier::Normal,
-        }
-    }
 }
 
 impl Display for Modifier {
@@ -99,12 +87,13 @@ impl Display for Modifier {
     }
 }
 
-// TODO: move to impl
-fn modifier_name(m: Modifier) -> &'static str {
-    match m {
-        Modifier::Normal => "",
-        Modifier::Twice => "2",
-        Modifier::Prime => "'",
+impl Modifier {
+    fn inverse(&self) -> Self {
+        match self {
+            &Modifier::Normal => Modifier::Prime,
+            &Modifier::Twice  => Modifier::Twice,
+            &Modifier::Prime  => Modifier::Normal,
+        }
     }
 }
 
@@ -148,7 +137,6 @@ impl FromStr for Generator {
     type Err = LLAError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // FIXME
         let idx = match s {
             "U"  => Ok(0),
             "U2" => Ok(1),
@@ -185,20 +173,16 @@ impl Generator {
         &GENERATORS[12]
     }
 
+    pub fn starting_moves() -> Vec<&'static Generator> {
+        vec![&GENERATORS[12], &GENERATORS[13], &GENERATORS[14]]
+    }
+
     pub fn is_u_move(&self) -> bool {
         self.face == Face::U
     }
 
     pub fn is_d_move(&self) -> bool {
         self.face == Face::D
-    }
-
-    pub fn index(&self) -> usize {
-        self.face as usize * 3 + self.modifier as usize
-    }
-
-    fn from_face_and_modifier(f: Face, m: Modifier) -> Self {
-        GENERATORS[f as usize * 3 + m as usize]
     }
 
     pub fn inverse(&self) -> Self {
@@ -209,34 +193,36 @@ impl Generator {
         Self::from_face_and_modifier(self.face.rotate_y(), self.modifier)
     }
 
+    fn from_face_and_modifier(f: Face, m: Modifier) -> Self {
+        GENERATORS[f as usize * 3 + m as usize]
+    }
+
     pub fn score(&self) -> u16 {
         self.face.score()
-    }
-
-    pub fn starting_moves() -> Vec<&'static Generator> {
-        vec![&GENERATORS[12], &GENERATORS[13], &GENERATORS[14]]
-    }
-
-    // the moves which can follow another move are those which
-    // * are on a different axis from the given move OR
-    // * are on the same axis but a different face IF the given move is on U, F, or R.
-    fn successors_(&self) -> Vec<&'static Generator> {
-        GENERATORS.iter().filter(|g| {
-            self.is_valid_successor(g)
-        }).collect()
     }
 
     pub fn components(&self) -> (Face, Modifier) {
         (self.face, self.modifier)
     }
 
+    // the moves which can follow another move are those which
+    // * are on a different axis from the given move OR
+    // * are on the same axis but a different face IF the given move is on U, F, or R.
+    fn successors_(&self) -> Vec<&'static Generator> {
+        GENERATORS.iter().filter(|g| self.is_valid_successor(g)).collect()
+    }
+
     pub fn is_valid_successor(&self, g: &Generator) -> bool {
-        face_axis(&g.face) != face_axis(&self.face)
-        || &g.face != &self.face && face_is_primary(&self.face)
+        &g.face.axis() != &self.face.axis()
+        || &g.face != &self.face && self.face.is_primary()
     }
 
     pub fn successors(&self) -> &'static Vec<&'static Generator> {
         &GENERATOR_SUCCESSORS[self.index()]
+    }
+
+    fn index(&self) -> usize {
+        self.face as usize * 3 + self.modifier as usize
     }
 }
 
@@ -245,6 +231,6 @@ fn gives_successors() {
     let f = Generator::from_str("F").unwrap();
     assert_eq!(
         f.successors().iter().map(|g| format!("{}", g)).collect::<Vec<String>>().join(" "),
-        "F"
+        "U U2 U' D D2 D' B B2 B' R R2 R' L L2 L'"
     );
 }

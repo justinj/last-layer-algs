@@ -26,7 +26,6 @@ use algorithm_iterator::{AlgorithmIterator};
 use std::io::{Read, Write};
 use std::fs::File;
 use std::path::Path;
-use ::lla_error::LLAError;
 use std::error::Error;
 
 // TODO: take this as a cli param?
