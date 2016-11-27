@@ -22,27 +22,26 @@ struct Creds {
 }
 
 impl Creds {
+    fn next_or_err(lines: &mut Iterator<Item=&str>) -> Result<String, Box<Error>> {
+        lines.next().map(|l| String::from(l)).ok_or(From::from("Bad credentials file"))
+    }
+
     fn load() -> Result<Self, Box<Error>> {
         let path = Path::new(CRED_FNAME);
         let mut file = File::open(&path)?;
         let mut s = String::new();
         file.read_to_string(&mut s)?;
         let mut lines = s.lines();
-        let consumer_key    = lines.next();
-        let consumer_secret = lines.next();
-        let access_key      = lines.next();
-        let access_secret   = lines.next();
-        match (consumer_key, consumer_secret, access_key, access_secret) {
-            (Some(consumer_key), Some(consumer_secret),
-             Some(access_key),   Some(access_secret)) =>
-                Ok(Creds {
-                    consumer_key: String::from(consumer_key),
-                    consumer_secret: String::from(consumer_secret),
-                    access_key: String::from(access_key),
-                    access_secret: String::from(access_secret),
-                }),
-            _ => Err(From::from("Bad credentials file"))
-        }
+        let consumer_key    = Self::next_or_err(&mut lines)?;
+        let consumer_secret = Self::next_or_err(&mut lines)?;
+        let access_key      = Self::next_or_err(&mut lines)?;
+        let access_secret   = Self::next_or_err(&mut lines)?;
+        Ok(Creds {
+            consumer_key: consumer_key,
+            consumer_secret: consumer_secret,
+            access_key: access_key,
+            access_secret: access_secret,
+        })
     }
 }
 
@@ -57,7 +56,8 @@ fn upload_image(consumer: &Token, access: &Token, filename: &str) -> Result<Medi
     let mut file = File::open(filename)?;
     let mut buf: Vec<u8> = vec![];
     file.read_to_end(&mut buf)?;
-    let image: String = buf.to_base64(Config {
+
+    let base64_encoded_image: String = buf.to_base64(Config {
         char_set: CharacterSet::Standard,
         newline: Newline::LF,
         pad: true,
@@ -65,14 +65,9 @@ fn upload_image(consumer: &Token, access: &Token, filename: &str) -> Result<Medi
     });
 
     let mut param = HashMap::new();
-    let _ = param.insert("media_data".into(), image.into());
-    let result = oauth::post(TWITTER_API_UPLOAD_URL,
-                             consumer,
-                             Some(access),
-                             Some(&param))?;
-
+    param.insert("media_data".into(), base64_encoded_image.into());
+    let result = oauth::post(TWITTER_API_UPLOAD_URL, consumer, Some(access), Some(&param))?;
     let response: TwitterUploadResponse = json::decode(String::from_utf8(result)?.as_str())?;
-
     Ok(response.media_id)
 }
 
@@ -89,9 +84,9 @@ pub fn post_tweet(consumer: &Token, access: &Token, status: &str, filename: &str
 
 pub fn tweet(alg: &str, image_filename: &str) -> Result<(), Box<Error>> {
     let creds = Creds::load()?;
+
     let consumer = Token::new(creds.consumer_key, creds.consumer_secret);
     let access = Token::new(creds.access_key, creds.access_secret);
-
     post_tweet(&consumer, &access, alg, image_filename)?;
 
     Ok(())

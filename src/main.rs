@@ -20,22 +20,19 @@ mod tweet;
 mod image_generator;
 mod lla_error;
 
+use std::str::FromStr;
 use algorithm::Algorithm;
-use ::std::str::FromStr;
 use algorithm_iterator::{AlgorithmIterator};
-use std::io::{Read, Write};
-use std::fs::File;
-use std::path::Path;
 use std::error::Error;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::Path;
 
 // TODO: take this as a cli param?
 const LAST_FNAME: &'static str = "last";
 const IMAGE_FNAME: &'static str = "output_file.png";
 
 fn alg_following(s: &str) -> Result<String, Box<Error>> {
-    // for a in AlgorithmIterator::new() {
-    //     println!("{}", a);
-    // }
     let mut it = AlgorithmIterator::from_starting_algorithm(s)?;
     let alg = it.next().unwrap();
     Ok(format!("{}", alg))
@@ -85,15 +82,10 @@ fn main() {
         if let Some(alg) = matches.value_of("alg") {
             match alg_following(alg) {
                 Ok(next) => println!("{}", next),
-                Err(msg) => {
-                    writeln!(&mut std::io::stderr(), "Error: {}", msg).unwrap();
-                    std::process::exit(1);
-                }
+                Err(msg) => panic!("Error: {}", msg),
             }
         }
-    }
-
-    if let Some(_) = matches.subcommand_matches("tweet") {
+    } else if let Some(_) = matches.subcommand_matches("tweet") {
         match prepare_tweet() {
             Err(why) => panic!("Error: {}", why),
             Ok(()) => {}
