@@ -33,7 +33,7 @@ use std::error::Error;
 const LAST_FNAME: &'static str = "last";
 const IMAGE_FNAME: &'static str = "output_file.png";
 
-fn alg_following(s: &str) -> Result<String, LLAError> {
+fn alg_following(s: &str) -> Result<String, Box<Error>> {
     // for a in AlgorithmIterator::new() {
     //     println!("{}", a);
     // }
@@ -60,7 +60,7 @@ fn prepare_tweet() -> Result<(), Box<Error>> {
     let s = get_last_alg()?;
     let alg_to_tweet = alg_following(s.as_str())?;
     let inverted_alg = Algorithm::from_str(alg_to_tweet.as_str()).unwrap().inverse();
-    ::image_generator::generate_image(alg.cube(), IMAGE_FNAME);
+    ::image_generator::generate_image(inverted_alg.cube(), IMAGE_FNAME);
     ::tweet::tweet(alg_to_tweet.as_str(), IMAGE_FNAME)?;
     write_alg(alg_to_tweet)?;
 
@@ -101,7 +101,7 @@ fn main() {
         }
     }
     
-    // for alg in AlgorithmIterator::new() {
-    //     println!("{} is an LL alg!", alg);
-    // }
+    for alg in AlgorithmIterator::new() {
+        println!("{} is an LL alg!", alg);
+    }
 }

@@ -1,6 +1,7 @@
 use generator::{Generator, Face, Modifier};
 use cubestate::CubeState;
 use algorithm::Algorithm; use ::std::str::FromStr;
+use ::std::error::Error;
 use ::lla_error::LLAError;
 
 #[derive(Debug)]
@@ -36,7 +37,7 @@ impl AlgorithmIterator {
         }
     }
 
-    pub fn from_starting_algorithm(s: &str) -> Result<Self, LLAError> {
+    pub fn from_starting_algorithm(s: &str) -> Result<Self, Box<Error>> {
         let alg = Algorithm::from_str(s)?.canonical_rotation();
         let moves = alg.moves.clone();
 
@@ -99,7 +100,8 @@ impl AlgorithmIterator {
                 return Some(self.cubestates[0])
             }
         }
-        let preceding_move = self.moves[idx];
+
+        let preceding_move = self.moves[idx - 1];
         self.indices[idx] += 1;
         if self.indices[idx] >= preceding_move.successors().len() {
             self.indices[idx] = 0;

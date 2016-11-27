@@ -47,7 +47,7 @@ impl Display for Face {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 enum Axis {
     UD, FB, RL
 }
@@ -78,7 +78,6 @@ fn face_is_primary(f: &Face) -> bool {
 pub enum Modifier {
     Normal, Twice, Prime
 }
-
 
 impl Modifier {
     fn inverse(&self) -> Self {
@@ -239,4 +238,13 @@ impl Generator {
     pub fn successors(&self) -> &'static Vec<&'static Generator> {
         &GENERATOR_SUCCESSORS[self.index()]
     }
+}
+
+#[test]
+fn gives_successors() {
+    let f = Generator::from_str("F").unwrap();
+    assert_eq!(
+        f.successors().iter().map(|g| format!("{}", g)).collect::<Vec<String>>().join(" "),
+        "F"
+    );
 }
