@@ -10,6 +10,7 @@ pub enum Face {
 }
 
 impl Face {
+    // Used to pick a "best" rotation of an algorithm to present.
     pub fn score(&self) -> u16 {
         match *self {
             Face::U => 0,
@@ -20,27 +21,29 @@ impl Face {
             Face::L => 1,
         }
     }
-}
 
-fn face_name(f: Face) -> &'static str {
-    match f {
-        Face::U => "U",
-        Face::D => "D",
-        Face::F => "F",
-        Face::B => "B",
-        Face::R => "R",
-        Face::L => "L",
+    fn rotate_y(&self) -> Face {
+        match self {
+            &Face::U => Face::U,
+            &Face::D => Face::D,
+            &Face::F => Face::L,
+            &Face::B => Face::R,
+            &Face::R => Face::F,
+            &Face::L => Face::B,
+        }
     }
 }
 
-fn face_rotate_y(f: Face) -> Face {
-    match f {
-        Face::U => Face::U,
-        Face::D => Face::D,
-        Face::F => Face::L,
-        Face::B => Face::R,
-        Face::R => Face::F,
-        Face::L => Face::B,
+impl Display for Face {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "{}", match self {
+            &Face::U => "U",
+            &Face::D => "D",
+            &Face::F => "F",
+            &Face::B => "B",
+            &Face::R => "R",
+            &Face::L => "L",
+        })
     }
 }
 
@@ -72,7 +75,7 @@ fn face_is_primary(f: &Face) -> bool {
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum Modifier {
+pub enum Modifier {
     Normal, Twice, Prime
 }
 
@@ -84,6 +87,16 @@ impl Modifier {
             &Modifier::Twice  => Modifier::Twice,
             &Modifier::Prime  => Modifier::Normal,
         }
+    }
+}
+
+impl Display for Modifier {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "{}", match self {
+            &Modifier::Normal => "",
+            &Modifier::Twice => "2",
+            &Modifier::Prime => "'",
+        })
     }
 }
 
@@ -164,7 +177,7 @@ impl FromStr for Generator {
 
 impl Display for Generator {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "{}", self.name())
+        write!(f, "{}{}", self.face, self.modifier)
     }
 }
 
@@ -194,7 +207,7 @@ impl Generator {
     }
 
     pub fn rotate_y(&self) -> Self {
-        Self::from_face_and_modifier(face_rotate_y(self.face), self.modifier)
+        Self::from_face_and_modifier(self.face.rotate_y(), self.modifier)
     }
 
     pub fn score(&self) -> u16 {
@@ -214,6 +227,10 @@ impl Generator {
         }).collect()
     }
 
+    pub fn components(&self) -> (Face, Modifier) {
+        (self.face, self.modifier)
+    }
+
     pub fn is_valid_successor(&self, g: &Generator) -> bool {
         face_axis(&g.face) != face_axis(&self.face)
         || &g.face != &self.face && face_is_primary(&self.face)
@@ -222,12 +239,4 @@ impl Generator {
     pub fn successors(&self) -> &'static Vec<&'static Generator> {
         &GENERATOR_SUCCESSORS[self.index()]
     }
-
-    // TODO: get rid of me for just display
-    pub fn name(&self) -> String {
-       let mut result: String = String::from(face_name(self.face));
-       result.push_str(modifier_name(self.modifier));
-       result
-    }
 }
-

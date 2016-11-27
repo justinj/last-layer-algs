@@ -27,9 +27,11 @@ use std::io::{Read, Write};
 use std::fs::File;
 use std::path::Path;
 use ::lla_error::LLAError;
+use std::error::Error;
 
 // TODO: take this as a cli param?
 const LAST_FNAME: &'static str = "last";
+const IMAGE_FNAME: &'static str = "output_file.png";
 
 fn alg_following(s: &str) -> Result<String, LLAError> {
     // for a in AlgorithmIterator::new() {
@@ -40,46 +42,29 @@ fn alg_following(s: &str) -> Result<String, LLAError> {
     Ok(format!("{}", alg))
 }
 
-fn prepare_tweet() {
+fn get_last_alg() -> Result<String, Box<Error>> {
     let path = Path::new(LAST_FNAME);
-    let display = path.display();
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("Couldn't open last alg file {}: {}", display, why),
-        Ok(file) => file,
-    };
-
+    let mut file = File::open(&path)?;
     let mut s = String::new();
+    file.read_to_string(&mut s)?;
+    Ok(s)
+}
 
-    match file.read_to_string(&mut s) {
-        Ok(_) => s = String::from(s.trim()),
-        Err(why) => panic!("Couldn't read file: {}", why),
-    }
+fn write_alg(alg: String) -> Result<(), Box<Error>> {
+    let path = Path::new(LAST_FNAME);
+    File::create(&path)?.write_all(alg.as_bytes())?;
+    Ok(())
+}
 
-    let result = match alg_following(s.as_str()) {
-        Err(why) => {
-            writeln!(&mut std::io::stderr(), "Error: {}", why).unwrap();
-            std::process::exit(1)
-        },
-        Ok(alg) => alg
-    };
+fn prepare_tweet() -> Result<(), Box<Error>> {
+    let s = get_last_alg()?;
+    let alg_to_tweet = alg_following(s.as_str())?;
+    let inverted_alg = Algorithm::from_str(alg_to_tweet.as_str()).unwrap().inverse();
+    ::image_generator::generate_image(alg.cube(), IMAGE_FNAME);
+    ::tweet::tweet(alg_to_tweet.as_str(), IMAGE_FNAME)?;
+    write_alg(alg_to_tweet)?;
 
-    let alg = Algorithm::from_str(result.as_str()).unwrap().inverse();
-    ::image_generator::generate_image(alg.cube(), "output_file.png");
-
-    match ::tweet::tweet(format!("{}", result).as_str()) {
-        Err(why) => println!("Couldn't tweet: {}", why),
-        Ok(()) => {
-            match File::create(&path) {
-                Err(why) => panic!("Couldn't open file for writing: {}", why),
-                Ok(mut file) => {
-                    match file.write_all(format!("{}", result).as_bytes()) {
-                        Err(why) => panic!("Couldn't write to file: {}", why),
-                        Ok(_) => ()
-                    }
-                }
-            };
-        }
-    };
+    Ok(())
 }
 
 fn main() {
@@ -110,10 +95,13 @@ fn main() {
     }
 
     if let Some(_) = matches.subcommand_matches("tweet") {
-        prepare_tweet();
+        match prepare_tweet() {
+            Err(why) => panic!("Error: {}", why),
+            Ok(()) => {}
+        }
     }
     
-    for alg in AlgorithmIterator::new() {
-        println!("{} is an LL alg!", alg);
-    }
+    // for alg in AlgorithmIterator::new() {
+    //     println!("{} is an LL alg!", alg);
+    // }
 }

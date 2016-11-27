@@ -1,4 +1,4 @@
-use generator::Generator;
+use generator::{Generator, Face, Modifier};
 use cubestate::CubeState;
 use algorithm::Algorithm; use ::std::str::FromStr;
 use ::lla_error::LLAError;
@@ -47,12 +47,11 @@ impl AlgorithmIterator {
         let cubestates = alg.cubestates_stack();
         let mut indices = vec![];
 
-        // TODO eh gross, shouldn't check the name
         indices.push(match alg.first_non_ud_move() {
-            Some(m) => match m.name().as_str() {
-                "R" => 0,
-                "R2" => 1,
-                "R'" => 2,
+            Some(m) => match m.components() {
+                (Face::R, Modifier::Normal) => 0,
+                (Face::R, Modifier::Twice)  => 1,
+                (Face::R, Modifier::Prime)  => 2,
                 _ => panic!("Shouldn't happen because we canonicalized the algorithm above"),
             },
             None => {
@@ -72,9 +71,6 @@ impl AlgorithmIterator {
                 }
             }
         }
-
-        // println!("{}", alg);
-        // println!("{:?}", indices);
 
         Ok(AlgorithmIterator {
             moves: moves,
@@ -134,7 +130,7 @@ impl AlgorithmIterator {
     }
 
     fn current_algorithm(&self) -> String {
-        self.moves.iter().map(|m| m.name()).collect::<Vec<String>>().join(" ")
+        self.moves.iter().map(|m| format!("{}", m)).collect::<Vec<String>>().join(" ")
     }
 }
 

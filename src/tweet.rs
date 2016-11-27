@@ -10,6 +10,8 @@ use rustc_serialize::base64::{ToBase64, Config, CharacterSet, Newline};
 use rustc_serialize::json;
 
 const CRED_FNAME: &'static str = "creds";
+const TWITTER_API_UPLOAD_URL: &'static str = "https://upload.twitter.com/1.1/media/upload.json";
+const TWITTER_API_TWEET_URL: &'static str = "https://api.twitter.com/1.1/statuses/update.json";
 
 #[derive(Debug)]
 struct Creds {
@@ -44,13 +46,15 @@ impl Creds {
     }
 }
 
+type MediaId = u64;
+
 #[derive(RustcDecodable)]
 struct TwitterUploadResponse {
-    media_id: u64
+    media_id: MediaId
 }
 
-pub fn update_status(consumer: &Token, access: &Token, status: &str) -> Result<(), Box<Error>> {
-    let mut file = File::open("output_file.png")?;
+fn upload_image(consumer: &Token, access: &Token, filename: &str) -> Result<MediaId, Box<Error>> {
+    let mut file = File::open(filename)?;
     let mut buf: Vec<u8> = vec![];
     file.read_to_end(&mut buf)?;
     let image: String = buf.to_base64(Config {
@@ -62,32 +66,33 @@ pub fn update_status(consumer: &Token, access: &Token, status: &str) -> Result<(
 
     let mut param = HashMap::new();
     let _ = param.insert("media_data".into(), image.into());
-    let result = oauth::post("https://upload.twitter.com/1.1/media/upload.json",
+    let result = oauth::post(TWITTER_API_UPLOAD_URL,
                              consumer,
                              Some(access),
                              Some(&param))?;
 
     let response: TwitterUploadResponse = json::decode(String::from_utf8(result)?.as_str())?;
-    println!("response was {:?}", response.media_id);
 
-    let mut param = HashMap::new();
-    // let _ = param.insert("status".into(), status.into());
-    let _ = param.insert("status".into(), status.into());
-    let _ = param.insert("media_ids".into(), format!("{}", response.media_id).into());
-    let _ = oauth::post("https://api.twitter.com/1.1/statuses/update.json",
-                        consumer,
-                        Some(access),
-                        Some(&param))?;
+    Ok(response.media_id)
+}
+
+pub fn post_tweet(consumer: &Token, access: &Token, status: &str, filename: &str) -> Result<(), Box<Error>> {
+    // Posting a tweet with an image takes two api calls, one to upload the image (which gives us
+    // back an identifier for the image) and one to post the tweet (which includes the identifier)
+    let media_id = upload_image(consumer, access, filename)?;
+    let mut parameters = HashMap::new();
+    parameters.insert("status".into(), status.into());
+    parameters.insert("media_ids".into(), format!("{}", media_id).into());
+    oauth::post(TWITTER_API_TWEET_URL, consumer, Some(access), Some(&parameters))?;
     Ok(())
 }
 
-pub fn tweet(alg: &str) -> Result<(), Box<Error>> {
+pub fn tweet(alg: &str, image_filename: &str) -> Result<(), Box<Error>> {
     let creds = Creds::load()?;
-
     let consumer = Token::new(creds.consumer_key, creds.consumer_secret);
     let access = Token::new(creds.access_key, creds.access_secret);
 
-    update_status(&consumer, &access, alg)?;
+    post_tweet(&consumer, &access, alg, image_filename)?;
 
     Ok(())
 }

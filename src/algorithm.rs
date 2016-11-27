@@ -44,7 +44,7 @@ impl FromStr for Algorithm {
 
 impl Display for Algorithm {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "{}", self.moves.iter().map(|g| g.name()).collect::<Vec<String>>().join(" "))
+        write!(f, "{}", self.moves.iter().map(|g| format!("{}", g)).collect::<Vec<String>>().join(" "))
     }
 }
 
