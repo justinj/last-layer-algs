@@ -100,8 +100,4 @@ fn main() {
             Ok(()) => {}
         }
     }
-    
-    for alg in AlgorithmIterator::new() {
-        println!("{} is an LL alg!", alg);
-    }
 }
