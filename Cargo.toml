@@ -6,7 +6,6 @@ authors = ["Justin Jaffray <justin.jaffray@gmail.com>"]
 [dependencies]
 lazy_static = "0.1.*"
 clap = "~2.19.0"
-twitter-api = "*"
 oauth-client = { git = "https://github.com/justinj/oauth-client-rs" }
 cairo = "0.0.4"
 rustc-serialize = "0.3"

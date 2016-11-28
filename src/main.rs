@@ -6,7 +6,6 @@ extern crate lazy_static;
 extern crate test;
 extern crate clap;
 extern crate cairo;
-extern crate twitter_api as twitter;
 extern crate oauth_client as oauth;
 extern crate rustc_serialize;
 
