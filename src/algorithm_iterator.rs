@@ -133,6 +133,12 @@ impl AlgorithmIterator {
     fn current_algorithm(&self) -> String {
         self.moves.iter().map(|m| format!("{}", m)).collect::<Vec<String>>().join(" ")
     }
+
+    fn ending_in_u_move(&self) -> bool {
+        self.moves[self.moves.len() - 1].is_u_move()
+            || (self.moves[self.moves.len() - 2].is_u_move()
+              && self.moves[self.moves.len() - 1].is_d_move())
+    }
 }
 
 impl Iterator for AlgorithmIterator {
@@ -142,7 +148,7 @@ impl Iterator for AlgorithmIterator {
         self.increment_to_next_cube();
         let mut current_cube = self.cubestates[self.cubestates.len() - 1];
 
-        while self.moves[self.moves.len() - 1].is_u_move() || !current_cube.is_ll() {
+        while self.ending_in_u_move() || !current_cube.is_ll() {
             current_cube = self.increment_to_next_cube();
         }
 
@@ -176,6 +182,15 @@ mod tests {
             format!("{}", first),
             "R' U' F' U F R"
         );
+
+        let second = ::algorithm_iterator::AlgorithmIterator::
+            from_starting_algorithm("R2 F2 B2 R2 L2 F2 B2 L2") .unwrap()
+            .next().unwrap();
+        assert_eq!(
+            format!("{}", second),
+            "R2 L2 F2 B2 R2 L2 F2 B2"
+        );
+
     }
 
     #[test]
