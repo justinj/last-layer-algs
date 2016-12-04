@@ -1,6 +1,7 @@
 use generator::{Generator, Face, Modifier};
 use cubestate::CubeState;
-use algorithm::Algorithm; use ::std::str::FromStr;
+use algorithm::Algorithm;
+use ::std::str::FromStr;
 use ::std::error::Error;
 
 #[derive(Debug)]
@@ -134,10 +135,27 @@ impl AlgorithmIterator {
         self.moves.iter().map(|m| format!("{}", m)).collect::<Vec<String>>().join(" ")
     }
 
+    fn current_cube(&self) -> CubeState {
+        self.cubestates[self.cubestates.len() - 1]
+    }
+
     fn ending_in_u_move(&self) -> bool {
         self.moves[self.moves.len() - 1].is_u_move()
             || (self.moves[self.moves.len() - 2].is_u_move()
               && self.moves[self.moves.len() - 1].is_d_move())
+    }
+
+    fn is_identity(&self) -> bool {
+        let mut cube = self.current_cube();
+
+        let auf = Generator::from_str("U").unwrap();
+        for _ in 0..4 {
+            if cube.is_solved() {
+                return true;
+            }
+            cube = cube.apply(&auf.effect);
+        }
+        return false;
     }
 }
 
@@ -146,9 +164,9 @@ impl Iterator for AlgorithmIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.increment_to_next_cube();
-        let mut current_cube = self.cubestates[self.cubestates.len() - 1];
+        let mut current_cube = self.current_cube();
 
-        while self.ending_in_u_move() || !current_cube.is_ll() {
+        while self.ending_in_u_move() || !current_cube.is_ll() || self.is_identity() {
             current_cube = self.increment_to_next_cube();
         }
 
@@ -174,6 +192,17 @@ mod tests {
     }
 
     #[test]
+    fn test_skips_identities() {
+        let alg = ::algorithm_iterator::AlgorithmIterator::
+            from_starting_algorithm("L F2 R' F' R F' L'").unwrap()
+            .next().unwrap();
+        assert_eq!(
+            format!("{}", alg),
+            "R' U L U' R U L'"
+        );
+    }
+
+    #[test]
     fn test_from_algorithm_starts_from_certain_position() {
         let first = ::algorithm_iterator::AlgorithmIterator::
             from_starting_algorithm("F R U R' U' F'") .unwrap()
@@ -182,15 +211,6 @@ mod tests {
             format!("{}", first),
             "R' U' F' U F R"
         );
-
-        let second = ::algorithm_iterator::AlgorithmIterator::
-            from_starting_algorithm("R2 F2 B2 R2 L2 F2 B2 L2") .unwrap()
-            .next().unwrap();
-        assert_eq!(
-            format!("{}", second),
-            "R2 L2 F2 B2 R2 L2 F2 B2"
-        );
-
     }
 
     #[test]

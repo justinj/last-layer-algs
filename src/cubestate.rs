@@ -101,4 +101,13 @@ impl CubeState {
         }
         return true;
     }
+
+    pub fn is_solved(self) -> bool {
+        for i in 0..54 {
+            if self.state[i] != i as u8 {
+                return false;
+            }
+        }
+        return true;
+    }
 }
