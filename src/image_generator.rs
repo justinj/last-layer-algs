@@ -3,6 +3,9 @@ use cairo::Cairo;
 use cairo::surface::format::Format;
 use cubestate::CubeState;
 
+// This module is pretty messy and I'd like to come up with a cleaner way to structure this image
+// drawing code, but I think manipulating this kind of thing is just often gross...
+
 const WIDTH: i32 = 500;
 const HEIGHT: i32 = 250;
 const STICKER_SIZE: f64 = 40.;
