@@ -26,3 +26,20 @@ consumer secret
 access key
 access secret
 ```
+
+## Future
+
+The current cube representation (storing each sticker) has a lot of benefits:
+
+* it's simple,
+* just one component, doesn't require a separate orientation and permutation and corners and edges,
+* can be very easily used to generate images, since we have each sticker.
+
+But it has a bunch of downsides as well:
+
+* it's not a very compact format, so we do more work than necessary when we apply a move,
+* it's difficult to optimize and prune the search tree because it doesn't really represent the structure of the cube very well,
+* since it's all one component, we can't speed it up in small chunks by replacing components with lookup tables.
+
+So this is just to say I eventually plan to change the current representation to one that stores the
+permutation and orientation of corners and edges independently.
