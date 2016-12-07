@@ -12,22 +12,6 @@ pub struct Algorithm {
     pub moves: Vec<Generator>
 }
 
-// We don't allow pairs like "R R", and we also don't allow pairs like "D U" (only "U D")
-fn check_for_invalid_pairs(moves: &Vec<Generator>) -> Result<(), LLAError> {
-    if moves.len() == 0 { return Ok(()); }
-    for i in 0..(moves.len() - 1) {
-        if !moves[i].is_valid_successor(&moves[i + 1]) {
-            return Err(
-                InvalidAlgorithm(
-                    format!(
-                    "\"{} {}\" is an invalid pair",
-                    moves[i], moves[i + 1]
-                )));
-        }
-    }
-    Ok(())
-}
-
 impl FromStr for Algorithm {
     type Err = Box<Error>;
 
@@ -36,7 +20,6 @@ impl FromStr for Algorithm {
             .split_whitespace()
             .map(|s| Generator::from_str(s))
             .collect::<Result<Vec<Generator>, LLAError>>()?;
-        check_for_invalid_pairs(&moves)?;
         Ok(Algorithm {
             moves: moves
         })
