@@ -4,7 +4,6 @@ use ::cubestate::CubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
 use ::lla_error::LLAError;
-use self::LLAError::InvalidAlgorithm;
 use ::std::error::Error;
 
 #[derive(Clone)]
