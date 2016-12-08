@@ -221,7 +221,7 @@ impl Generator {
         &GENERATOR_SUCCESSORS[self.index()]
     }
 
-    fn index(&self) -> usize {
+    pub fn index(&self) -> usize {
         self.face as usize * 3 + self.modifier as usize
     }
 }

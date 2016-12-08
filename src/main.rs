@@ -17,6 +17,8 @@ mod algorithm_iterator;
 mod tweet;
 mod image_generator;
 mod lla_error;
+mod bit_orientation;
+mod corner_permutation;
 
 use std::str::FromStr;
 use algorithm::Algorithm;

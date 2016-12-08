@@ -1,5 +1,5 @@
 use std::fmt;
-use ::std::fmt::Display;
+use std::fmt::Display;
 
 const NUM_STICKERS: usize = 54;
 

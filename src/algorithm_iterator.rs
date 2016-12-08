@@ -1,12 +1,15 @@
+#![allow(dead_code, unused_imports)]
 use generator::{Generator, Face, Modifier};
 use cubestate::CubeState;
 use algorithm::Algorithm;
+use corner_permutation::{SOLVED, TRANSITIONS, PRUNING};
 use ::std::str::FromStr;
 use ::std::error::Error;
 
 #[derive(Debug)]
 pub struct AlgorithmIterator {
     cubestates: Vec<CubeState>,
+    cornerperms: Vec<u16>,
     moves: Vec<Generator>,
     indices: Vec<usize>,
     length: i8
@@ -17,6 +20,7 @@ impl AlgorithmIterator {
         let mut iter = AlgorithmIterator {
             moves: vec![],
             cubestates: vec![],
+            cornerperms: vec![],
             indices: vec![],
             length: 0,
         };
@@ -29,6 +33,7 @@ impl AlgorithmIterator {
         let first_move = Generator::first();
         self.moves = vec![*first_move];
         self.cubestates = vec![first_move.effect];
+        self.cornerperms = vec![TRANSITIONS[SOLVED][first_move.index()]];
         self.indices = vec![0];
         self.length = len;
         while self.moves.len() < self.length as usize {
@@ -62,11 +67,16 @@ impl AlgorithmIterator {
             }
         });
 
+        // FIXME we add 12 because that's the index of R, this sucks
+        let mut cornerperms = vec![TRANSITIONS[SOLVED][indices[0] + 12]];
+
         for &m in moves.iter().skip(1) {
             let cur_idx = indices.len();
             let successors = moves[cur_idx - 1].successors();
-            for (i, &&s) in successors.iter().enumerate() {
-                if s == m {
+            for (i, &&gen) in successors.iter().enumerate() {
+                if gen == m {
+                    let last_corner = cornerperms[cornerperms.len() - 1];
+                    cornerperms.push(TRANSITIONS[last_corner as usize][gen.index()]);
                     indices.push(i);
                     break;
                 }
@@ -76,6 +86,7 @@ impl AlgorithmIterator {
         Ok(AlgorithmIterator {
             moves: moves,
             cubestates: cubestates,
+            cornerperms: cornerperms,
             indices: indices,
             length: alg.length() as i8,
         })
@@ -86,6 +97,9 @@ impl AlgorithmIterator {
         self.indices.push(0);
         let last = self.cubestates[self.cubestates.len() - 1];
         self.cubestates.push(last.apply(&g.effect));
+
+        let last_corner = self.cornerperms[self.cornerperms.len() - 1];
+        self.cornerperms.push(TRANSITIONS[last_corner as usize][g.index()]);
     }
 
     fn inc_idx(&mut self, idx: usize) -> Option<CubeState> {
@@ -96,13 +110,16 @@ impl AlgorithmIterator {
                 return None;
             } else {
                 self.cubestates[0] = Generator::starting_moves()[self.indices[0]].effect.clone();
+                self.cornerperms[0] = TRANSITIONS[SOLVED][self.indices[0] + 12];
                 self.moves[0] = Generator::starting_moves()[self.indices[0]].clone();
                 return Some(self.cubestates[0])
             }
         }
 
         let preceding_move = self.moves[idx - 1];
+
         self.indices[idx] += 1;
+
         if self.indices[idx] >= preceding_move.successors().len() {
             self.indices[idx] = 0;
             if let None = self.inc_idx(idx - 1) {
@@ -110,7 +127,15 @@ impl AlgorithmIterator {
             }
         }
 
+
+
         self.moves[idx] = *self.moves[idx - 1].successors()[self.indices[idx]];
+        self.cornerperms[idx] = TRANSITIONS[self.cornerperms[idx - 1] as usize][self.moves[idx].index()];
+
+        let distance_to_bottom: u16 = self.length as u16 - 1 - idx as u16;
+        if distance_to_bottom < PRUNING[self.cornerperms[idx] as usize] {
+            return self.inc_idx(idx);
+        }
 
         {
             let (ref left, ref mut right) = self.cubestates.split_at_mut(idx);
