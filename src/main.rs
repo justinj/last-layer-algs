@@ -92,7 +92,7 @@ fn main() {
         }
     } else {
         let mut it = AlgorithmIterator::new();
-        loop {
+        for _ in 0..100 {
             println!("{}", it.next().unwrap());
         }
     }

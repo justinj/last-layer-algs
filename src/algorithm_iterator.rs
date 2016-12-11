@@ -102,43 +102,49 @@ impl AlgorithmIterator {
         self.cornerperms.push(TRANSITIONS[last_corner as usize][g.index()]);
     }
 
-    fn inc_idx(&mut self, idx: usize) -> bool {
-        if idx == 0 {
-            // we have this gross special case because the legal starting moves are a special case
-            self.indices[0] += 1;
-            if self.indices[0] >= Generator::starting_moves().len() {
-                return false;
+    // FIXME: this function needs a lot of work
+    fn inc_idx(&mut self, i: usize) -> bool {
+        let mut idx = i;
+        loop {
+            if idx == 0 {
+                // we have this gross special case because the legal starting moves are a special case
+                self.indices[0] += 1;
+                if self.indices[0] >= Generator::starting_moves().len() {
+                    return false;
+                } else {
+                    self.cubestates[0] = Generator::starting_moves()[self.indices[0]].effect.clone();
+                    self.cornerperms[0] = TRANSITIONS[SOLVED][self.indices[0] + 12];
+                    self.moves[0] = Generator::starting_moves()[self.indices[0]].clone();
+                    idx += 1;
+                    break;
+                }
             } else {
-                self.cubestates[0] = Generator::starting_moves()[self.indices[0]].effect.clone();
-                self.cornerperms[0] = TRANSITIONS[SOLVED][self.indices[0] + 12];
-                self.moves[0] = Generator::starting_moves()[self.indices[0]].clone();
-                return true;
+                let preceding_move = self.moves[idx - 1];
+
+                self.indices[idx] += 1;
+
+                if self.indices[idx] >= preceding_move.successors().len() {
+                    self.indices[idx] = 0;
+                    idx -= 1;
+                } else {
+                    break;
+                }
             }
         }
 
-        let preceding_move = self.moves[idx - 1];
+        for idx in idx..(self.length as usize) {
+            self.moves[idx] = *self.moves[idx - 1].successors()[self.indices[idx]];
+            self.cornerperms[idx] = TRANSITIONS[self.cornerperms[idx - 1] as usize][self.moves[idx].index()];
 
-        self.indices[idx] += 1;
-
-        if self.indices[idx] >= preceding_move.successors().len() {
-            self.indices[idx] = 0;
-            if !self.inc_idx(idx - 1) {
-                return false;
+            let distance_to_bottom: u16 = self.length as u16 - 1 - idx as u16;
+            if distance_to_bottom < PRUNING[self.cornerperms[idx] as usize] {
+                return self.inc_idx(idx);
             }
-        }
 
-        self.moves[idx] = *self.moves[idx - 1].successors()[self.indices[idx]];
-        self.cornerperms[idx] = TRANSITIONS[self.cornerperms[idx - 1] as usize][self.moves[idx].index()];
-
-        let distance_to_bottom: u16 = self.length as u16 - 1 - idx as u16;
-        if distance_to_bottom < PRUNING[self.cornerperms[idx] as usize] {
-            return self.inc_idx(idx);
-        }
-
-        {
             let (ref left, ref mut right) = self.cubestates.split_at_mut(idx);
             left[idx - 1].apply_into(&self.moves[idx].effect, &mut right[0]);
         }
+
         true
     }
 
