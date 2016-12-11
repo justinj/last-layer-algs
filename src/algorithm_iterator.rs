@@ -102,17 +102,17 @@ impl AlgorithmIterator {
         self.cornerperms.push(TRANSITIONS[last_corner as usize][g.index()]);
     }
 
-    fn inc_idx(&mut self, idx: usize) -> Option<CubeState> {
+    fn inc_idx(&mut self, idx: usize) -> bool {
         if idx == 0 {
             // we have this gross special case because the legal starting moves are a special case
             self.indices[0] += 1;
             if self.indices[0] >= Generator::starting_moves().len() {
-                return None;
+                return false;
             } else {
                 self.cubestates[0] = Generator::starting_moves()[self.indices[0]].effect.clone();
                 self.cornerperms[0] = TRANSITIONS[SOLVED][self.indices[0] + 12];
                 self.moves[0] = Generator::starting_moves()[self.indices[0]].clone();
-                return Some(self.cubestates[0])
+                return true;
             }
         }
 
@@ -122,12 +122,10 @@ impl AlgorithmIterator {
 
         if self.indices[idx] >= preceding_move.successors().len() {
             self.indices[idx] = 0;
-            if let None = self.inc_idx(idx - 1) {
-                return None;
+            if !self.inc_idx(idx - 1) {
+                return false;
             }
         }
-
-
 
         self.moves[idx] = *self.moves[idx - 1].successors()[self.indices[idx]];
         self.cornerperms[idx] = TRANSITIONS[self.cornerperms[idx - 1] as usize][self.moves[idx].index()];
@@ -141,14 +139,14 @@ impl AlgorithmIterator {
             let (ref left, ref mut right) = self.cubestates.split_at_mut(idx);
             left[idx - 1].apply_into(&self.moves[idx].effect, &mut right[0]);
         }
-        Some(self.cubestates[self.cubestates.len() - 1])
+        true
     }
 
     fn increment_to_next_cube(&mut self) -> CubeState {
         let last_move_index = self.length as usize - 1;
         match self.inc_idx(last_move_index) {
-            Some(cube) => cube,
-            None => {
+            true => self.cubestates[self.length as usize - 1],
+            false => {
                 let new_length = self.length + 1;
                 self.initialize_with_length(new_length);
                 self.increment_to_next_cube()

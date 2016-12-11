@@ -147,14 +147,6 @@ fn gives_canonical_if_starts_with_u_or_d() {
 }
 
 #[test]
-fn fails_on_invalid_successor() {
-    match Algorithm::from_str("R R") {
-        Ok(_) => panic!("Expected failure!"),
-        Err(s) => assert_eq!(format!("{}", s), "Invalid algorithm: \"R R\" is an invalid pair"),
-    }
-}
-
-#[test]
 fn can_take_inverses() {
     let alg = Algorithm::from_str("R U R' U'").unwrap();
     assert_eq!(format!("{}", alg.inverse()), "U R U' R'");

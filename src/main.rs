@@ -92,9 +92,8 @@ fn main() {
         }
     } else {
         let mut it = AlgorithmIterator::new();
-        for _ in 0..100 {
-            it.next();
+        loop {
+            println!("{}", it.next().unwrap());
         }
-        println!("Generated 100 last layers");
     }
 }
