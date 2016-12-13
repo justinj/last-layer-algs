@@ -104,7 +104,7 @@ pub struct Generator {
     modifier: Modifier,
 }
 
-static GENERATORS: [Generator; 18] = [
+pub static GENERATORS: [Generator; 18] = [
     Generator { face: Face::U, modifier: Modifier::Normal, effect: CubeState { state: [6,3,0,7,4,1,8,5,2,12,13,14,15,16,17,53,52,51,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,11,10,9] } },
     Generator { face: Face::U, modifier: Modifier::Twice,  effect: CubeState { state: [8,7,6,5,4,3,2,1,0,15,16,17,53,52,51,9,10,11,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,14,13,12] } },
     Generator { face: Face::U, modifier: Modifier::Prime,  effect: CubeState { state: [2,5,8,1,4,7,0,3,6,53,52,51,9,10,11,12,13,14,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,17,16,15] } },
@@ -133,29 +133,52 @@ lazy_static! {
     };
 }
 
+// TODO: replace that usage of fromstr with one of these
+#[allow(dead_code)]
+pub mod move_indices {
+    pub const U      : usize = 0;
+    pub const U2     : usize = 1;
+    pub const UPRIME : usize = 2;
+    pub const D      : usize = 3;
+    pub const D2     : usize = 4;
+    pub const DPRIME : usize = 5;
+    pub const F      : usize = 6;
+    pub const F2     : usize = 7;
+    pub const FPRIME : usize = 8;
+    pub const B      : usize = 9;
+    pub const B2     : usize = 10;
+    pub const BPRIME : usize = 11;
+    pub const R      : usize = 12;
+    pub const R2     : usize = 13;
+    pub const RPRIME : usize = 14;
+    pub const L      : usize = 15;
+    pub const L2     : usize = 16;
+    pub const LPRIME : usize = 17;
+}
+
 impl FromStr for Generator {
     type Err = LLAError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let idx = match s {
-            "U"  => Ok(0),
-            "U2" => Ok(1),
-            "U'" => Ok(2),
-            "D"  => Ok(3),
-            "D2" => Ok(4),
-            "D'" => Ok(5),
-            "F"  => Ok(6),
-            "F2" => Ok(7),
-            "F'" => Ok(8),
-            "B"  => Ok(9),
-            "B2" => Ok(10),
-            "B'" => Ok(11),
-            "R"  => Ok(12),
-            "R2" => Ok(13),
-            "R'" => Ok(14),
-            "L"  => Ok(15),
-            "L2" => Ok(16),
-            "L'" => Ok(17),
+            "U"  => Ok(move_indices::U),
+            "U2" => Ok(move_indices::U2),
+            "U'" => Ok(move_indices::UPRIME),
+            "D"  => Ok(move_indices::D),
+            "D2" => Ok(move_indices::D2),
+            "D'" => Ok(move_indices::DPRIME),
+            "F"  => Ok(move_indices::F),
+            "F2" => Ok(move_indices::F2),
+            "F'" => Ok(move_indices::FPRIME),
+            "B"  => Ok(move_indices::B),
+            "B2" => Ok(move_indices::B2),
+            "B'" => Ok(move_indices::BPRIME),
+            "R"  => Ok(move_indices::R),
+            "R2" => Ok(move_indices::R2),
+            "R'" => Ok(move_indices::RPRIME),
+            "L"  => Ok(move_indices::L),
+            "L2" => Ok(move_indices::L2),
+            "L'" => Ok(move_indices::LPRIME),
             &_ => Err(InvalidAlgorithm(format!("No move '{}'", s)))
         }?;
         Ok(GENERATORS[idx])

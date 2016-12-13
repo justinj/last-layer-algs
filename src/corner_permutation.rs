@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::collections::VecDeque;
 
-pub const SOLVED: usize = 0;
+pub const CP_SOLVED: usize = 0;
 const NUM_CORNERS: usize = 8;
 
 const FACTORIAL: [u16; 8] = [
@@ -14,6 +14,8 @@ const FACTORIAL: [u16; 8] = [
     720,
     5040,
 ];
+
+pub type CPIndex = usize;
 
 const NUM_PERMUTATIONS: usize = 40320;
 

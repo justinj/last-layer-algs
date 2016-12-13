@@ -1,6 +1,7 @@
 use ::generator::Generator;
 use ::generator::Face;
 use ::cubestate::CubeState;
+use ::f2l_cubestate::F2LCubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
 use ::lla_error::LLAError;
@@ -42,11 +43,11 @@ impl Algorithm {
 
     // Gives a vec of the incremental cubestates after each move is applied
     // Used to reconstruct the state of the iterator
-    pub fn cubestates_stack(&self) -> Vec<CubeState> {
+    pub fn cubestates_stack(&self) -> Vec<F2LCubeState> {
         let mut result = vec![];
-        let mut curr_cube = CubeState::solved();
+        let mut curr_cube = F2LCubeState::new();
         for m in &self.moves {
-            curr_cube = curr_cube.apply(&m.effect);
+            curr_cube = curr_cube.apply(*m);
             result.push(curr_cube);
         }
         result
@@ -58,7 +59,7 @@ impl Algorithm {
         Algorithm { moves: moves }
     }
 
-    pub fn cube(&self) -> CubeState {
+    pub fn cube(&self) -> F2LCubeState {
         let cubestates = self.cubestates_stack();
         cubestates[cubestates.len() - 1]
     }
