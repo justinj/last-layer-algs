@@ -17,9 +17,10 @@ mod algorithm_iterator;
 mod tweet;
 mod image_generator;
 mod lla_error;
-mod bit_orientation;
 mod corner_permutation;
+mod corner_orientation;
 mod f2l_cubestate;
+mod prunable;
 
 use std::str::FromStr;
 use algorithm::Algorithm;
@@ -93,7 +94,7 @@ fn main() {
         }
     } else {
         let mut it = AlgorithmIterator::new();
-        for _ in 0..100 {
+        for _ in 0..300 {
             println!("{}", it.next().unwrap());
         }
     }

@@ -1,5 +1,6 @@
 use generator::{Generator, GENERATORS};
 use corner_permutation::{CPIndex, CP_SOLVED, TRANSITIONS, PRUNING};
+use corner_orientation::{COIndex, CO_SOLVED, CO_TRANSITIONS, CO_PRUNING};
 use generator::move_indices::{F, R, U, RPRIME, UPRIME, U2, FPRIME, D};
 use cubestate::CubeState;
 
@@ -7,13 +8,15 @@ use cubestate::CubeState;
 pub struct F2LCubeState {
     pub cubestate: CubeState,
     pub cornerperm: CPIndex,
+    pub cornerorie: COIndex,
 }
 
 impl F2LCubeState {
     pub fn new() -> Self {
         F2LCubeState {
             cubestate: CubeState::solved(),
-            cornerperm: CP_SOLVED
+            cornerperm: CP_SOLVED,
+            cornerorie: CO_SOLVED,
         }
     }
 
@@ -22,6 +25,7 @@ impl F2LCubeState {
         F2LCubeState {
             cubestate: self.cubestate.apply(&GENERATORS[idx].effect),
             cornerperm: TRANSITIONS[self.cornerperm][GENERATORS[idx].index()] as CPIndex,
+            cornerorie: CO_TRANSITIONS[self.cornerorie][GENERATORS[idx].index()] as COIndex,
         }
     }
 
@@ -34,6 +38,7 @@ impl F2LCubeState {
     pub fn apply_into(&self, g: Generator, dest: &mut Self) {
         self.cubestate.apply_into(&g.effect, &mut dest.cubestate);
         dest.cornerperm = TRANSITIONS[self.cornerperm][GENERATORS[g.index()].index()] as CPIndex;
+        dest.cornerorie = CO_TRANSITIONS[self.cornerorie][GENERATORS[g.index()].index()] as COIndex;
     }
 
     pub fn is_ll(&self) -> bool {
@@ -45,7 +50,7 @@ impl F2LCubeState {
     }
 
     pub fn prunable(&self, dist: u16) -> bool {
-        dist < PRUNING[self.cornerperm]
+        dist < PRUNING[self.cornerperm] || dist < CO_PRUNING[self.cornerorie] as u16
     }
 }
 

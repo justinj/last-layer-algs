@@ -228,7 +228,7 @@ mod tests {
         );
     }
 
-    #[bench]
+    //#[bench]
     fn bench_gen_6s(b: &mut Bencher) {
         b.iter(|| {
             for alg in ::algorithm_iterator::AlgorithmIterator::new().take(4) {

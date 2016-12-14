@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-use std::collections::VecDeque;
+use prunable::Prunable;
 
 pub const CP_SOLVED: usize = 0;
 const NUM_CORNERS: usize = 8;
@@ -64,12 +63,20 @@ impl CornerPermutation {
         }
         CornerPermutation { state: state }
     }
+}
+
+impl Prunable for CornerPermutation {
+    fn initial_pos() -> Self {
+        CornerPermutation {
+            state: [0, 1, 2, 3, 4, 5, 6, 7],
+        }
+    }
 
     fn apply_idx(&self, idx: usize) -> Self {
         Self::apply(&self, &MOVES_BY_INDEX[idx])
     }
 
-    fn is_fl_solved(&self) -> bool {
+    fn is_solved(&self) -> bool {
         for i in 4..8 {
             if self.state[i] != i as u8 {
                 return false;
@@ -78,11 +85,11 @@ impl CornerPermutation {
         true
     }
 
-    fn index(&self) -> u16 {
+    fn index(&self) -> usize {
         let mut state = self.state.clone();
-        let mut result: u16 = 0;
+        let mut result: usize = 0;
         for i in 0..NUM_CORNERS {
-            result += state[i] as u16 * FACTORIAL[NUM_CORNERS - i - 1];
+            result += state[i] as usize * FACTORIAL[NUM_CORNERS - i - 1] as usize;
             for j in (i + 1)..NUM_CORNERS {
                 if state[j] > state[i] {
                     state[j] -= 1;
@@ -91,54 +98,17 @@ impl CornerPermutation {
         }
         result
     }
+
+    fn total_states() -> usize { NUM_PERMUTATIONS }
 }
 
 lazy_static! {
-    pub static ref TRANSITIONS: Vec<[u16; 18]> = {
-        let mut result = vec![];
-        let mut visited: Vec<bool> = vec![];
-        for _ in 0..NUM_PERMUTATIONS {
-            result.push([0; 18]);
-            visited.push(false);
-        }
-
-        let mut stack = vec![CornerPermutation::new([0, 1, 2, 3, 4, 5, 6, 7])];
-        while let Some(state) = stack.pop() {
-            let idx = state.index();
-            if !visited[idx as usize] {
-                visited[idx as usize] = true;
-                for i in 0..18 {
-                    let new_state = state.apply_idx(i);
-                    stack.push(new_state);
-                    result[idx as usize][i] = new_state.index();
-                }
-            }
-        }
-        result
+    pub static ref TRANSITIONS: Vec<[usize; 18]> = {
+        CornerPermutation::make_transition_table()
     };
 
     pub static ref PRUNING: Vec<u16> = {
-        let mut result = vec![];
-        for _ in 0..NUM_PERMUTATIONS {
-            result.push(100);
-        }
-
-        let mut queue = VecDeque::new();
-        queue.push_back((0, CornerPermutation::new([0, 1, 2, 3, 4, 5, 6, 7])));
-        while let Some((distance, state)) = queue.pop_front() {
-            let idx = state.index();
-            if distance < result[idx as usize] {
-                result[idx as usize] = distance;
-                for i in 0..18 {
-                    if state.is_fl_solved() {
-                        queue.push_back((0, state.apply_idx(i)));
-                    } else {
-                        queue.push_back((distance + 1, state.apply_idx(i)));
-                    }
-                }
-            }
-        }
-        result
+        CornerPermutation::make_pruning_table()
     };
 }
 

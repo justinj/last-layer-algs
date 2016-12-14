@@ -1,6 +1,5 @@
 use ::generator::Generator;
 use ::generator::Face;
-use ::cubestate::CubeState;
 use ::f2l_cubestate::F2LCubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
