@@ -60,7 +60,7 @@ fn prepare_tweet() -> Result<(), Box<Error>> {
     let s = get_last_alg()?;
     let alg_to_tweet = alg_following(s.as_str())?;
     let inverted_alg = Algorithm::from_str(alg_to_tweet.as_str()).unwrap().inverse();
-    ::image_generator::generate_image(inverted_alg.cube().cubestate, IMAGE_FNAME);
+    ::image_generator::generate_image(inverted_alg.cube(), IMAGE_FNAME);
     ::tweet::tweet(alg_to_tweet.as_str(), IMAGE_FNAME)?;
     write_alg(alg_to_tweet)?;
 
@@ -96,7 +96,8 @@ fn main() {
         }
     } else {
         let mut it = AlgorithmIterator::new();
-        for _ in 0..300 {
+        // for _ in 0..300 {
+        loop {
             println!("{}", it.next().unwrap());
         }
     }

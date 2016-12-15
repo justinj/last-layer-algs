@@ -1,6 +1,7 @@
 use ::generator::Generator;
 use ::generator::Face;
 use ::f2l_cubestate::F2LCubeState;
+use ::cubestate::CubeState;
 use ::std::str::FromStr;
 use ::std::fmt::Display;
 use ::lla_error::LLAError;
@@ -58,9 +59,12 @@ impl Algorithm {
         Algorithm { moves: moves }
     }
 
-    pub fn cube(&self) -> F2LCubeState {
-        let cubestates = self.cubestates_stack();
-        cubestates[cubestates.len() - 1]
+    pub fn cube(&self) -> CubeState {
+        let mut curr_cube = CubeState::solved();
+        for m in &self.moves {
+            curr_cube = curr_cube.apply(&m.effect);
+        }
+        curr_cube
     }
 
     fn rotate(&self) -> Self {

@@ -8,17 +8,15 @@ use cubestate::CubeState;
 
 #[derive(Debug, Clone, Copy)]
 pub struct F2LCubeState {
-    pub cubestate: CubeState,
-    pub cornerperm: CPIndex,
-    pub cornerorie: COIndex,
-    pub edgeorie: EOIndex,
-    pub edgeperm: EdgePermutation,
+    cornerperm: CPIndex,
+    cornerorie: COIndex,
+    edgeorie: EOIndex,
+    edgeperm: EdgePermutation,
 }
 
 impl F2LCubeState {
     pub fn new() -> Self {
         F2LCubeState {
-            cubestate: CubeState::solved(),
             cornerperm: CP_SOLVED,
             cornerorie: CO_SOLVED,
             edgeorie: EO_SOLVED,
@@ -29,7 +27,6 @@ impl F2LCubeState {
     // TODO: have a typedef for the move indices?
     fn apply_idx(&self, idx: usize) -> Self {
         F2LCubeState {
-            cubestate: self.cubestate.apply(&GENERATORS[idx].effect),
             cornerperm: TRANSITIONS[self.cornerperm][GENERATORS[idx].index()] as CPIndex,
             cornerorie: CO_TRANSITIONS[self.cornerorie][GENERATORS[idx].index()] as COIndex,
             edgeorie: EO_TRANSITIONS[self.edgeorie][GENERATORS[idx].index()] as EOIndex,
@@ -44,7 +41,6 @@ impl F2LCubeState {
     }
 
     pub fn apply_into(&self, g: Generator, dest: &mut Self) {
-        self.cubestate.apply_into(&g.effect, &mut dest.cubestate);
         dest.cornerperm = TRANSITIONS[self.cornerperm][GENERATORS[g.index()].index()] as CPIndex;
         dest.cornerorie = CO_TRANSITIONS[self.cornerorie][GENERATORS[g.index()].index()] as COIndex;
         dest.edgeorie = EO_TRANSITIONS[self.edgeorie][GENERATORS[g.index()].index()] as EOIndex;
@@ -67,11 +63,6 @@ impl F2LCubeState {
                  || self.apply_idx(0).is_id()
                  || self.apply_idx(1).is_id()
                  || self.apply_idx(2).is_id())
-        // self.cubestate.is_ll() &&
-        //     !self.cubestate.is_solved() &&
-        //     !self.cubestate.apply(&GENERATORS[U].effect).is_solved() &&
-        //     !self.cubestate.apply(&GENERATORS[U2].effect).is_solved() &&
-        //     !self.cubestate.apply(&GENERATORS[UPRIME].effect).is_solved()
     }
 
     pub fn prunable(&self, dist: u16) -> bool {
