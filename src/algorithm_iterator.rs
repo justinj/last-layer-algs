@@ -14,6 +14,12 @@ pub struct AlgorithmIterator {
     length: i8
 }
 
+enum IncrementResult {
+    Done,
+    Exhausted,
+    StartFrom(usize)
+}
+
 impl AlgorithmIterator {
     pub fn new() -> Self {
         let mut iter = AlgorithmIterator {
@@ -91,14 +97,14 @@ impl AlgorithmIterator {
     }
 
     // FIXME: this function needs a lot of work
-    fn inc_idx(&mut self, i: usize) -> bool {
+    fn inc_idx(&mut self, i: usize) -> IncrementResult {
         let mut idx = i;
         loop {
             if idx == 0 {
                 // we have this gross special case because the legal starting moves are a special case
                 self.indices[0] += 1;
                 if self.indices[0] >= Generator::starting_moves().len() {
-                    return false;
+                    return IncrementResult::Exhausted;
                 } else {
                     self.cubestates[0] = F2LCubeState::new().apply(*Generator::starting_moves()[self.indices[0]]);
                     self.moves[0] = Generator::starting_moves()[self.indices[0]].clone();
@@ -129,23 +135,29 @@ impl AlgorithmIterator {
 
             let distance_to_bottom: u16 = self.length as u16 - 1 - idx as u16;
             if self.cubestates[idx].prunable(distance_to_bottom) {
-                return self.inc_idx(idx);
+                return IncrementResult::StartFrom(idx);
             }
         }
 
-        true
+        IncrementResult::Done
     }
 
     fn increment_to_next_cube(&mut self) -> F2LCubeState {
-        let last_move_index = self.length as usize - 1;
-        match self.inc_idx(last_move_index) {
-            true => self.cubestates[self.length as usize - 1],
-            false => {
-                let new_length = self.length + 1;
-                self.initialize_with_length(new_length);
-                self.increment_to_next_cube()
-            },
+        let mut cur_idx = self.length as usize - 1;
+        loop {
+            match self.inc_idx(cur_idx) {
+                IncrementResult::Done => { break },
+                IncrementResult::Exhausted => {
+                    let new_length = self.length + 1;
+                    self.initialize_with_length(new_length);
+                    return self.increment_to_next_cube()
+                },
+                IncrementResult::StartFrom(idx) => {
+                    cur_idx = idx;
+                }
+            }
         }
+        self.cubestates[self.length as usize - 1]
     }
 
     fn current_algorithm(&self) -> String {

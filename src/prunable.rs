@@ -43,10 +43,11 @@ pub trait Prunable : Sized {
             if distance < result[idx as usize] {
                 result[idx as usize] = distance;
                 for i in 0..18 {
-                    if state.is_solved() {
-                        queue.push_back((0, state.apply_idx(i)));
+                    let new_state = state.apply_idx(i);
+                    if new_state.is_solved() {
+                        queue.push_back((0, new_state));
                     } else {
-                        queue.push_back((distance + 1, state.apply_idx(i)));
+                        queue.push_back((distance + 1, new_state));
                     }
                 }
             }

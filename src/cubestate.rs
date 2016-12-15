@@ -91,23 +91,4 @@ impl CubeState {
             dest.state[i] = self.state[(*other).state[i] as usize];
         }
     }
-
-    // That this is as simple as it is just arises from the way we represent a cube
-    pub fn is_ll(self) -> bool {
-        for i in 18..51 {
-            if self.state[i] != i as u8 {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    pub fn is_solved(self) -> bool {
-        for i in 0..54 {
-            if self.state[i] != i as u8 {
-                return false;
-            }
-        }
-        return true;
-    }
 }

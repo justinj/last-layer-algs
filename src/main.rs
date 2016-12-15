@@ -19,6 +19,8 @@ mod image_generator;
 mod lla_error;
 mod corner_permutation;
 mod corner_orientation;
+mod edge_orientation;
+mod edge_permutation;
 mod f2l_cubestate;
 mod prunable;
 
